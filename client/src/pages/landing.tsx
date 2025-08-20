@@ -172,6 +172,9 @@ export default function Landing() {
           <p className="text-gray-400">
             Promise Kingdom Community Ministries - Equipping leaders for kingdom impact through biblical education and community.
           </p>
+          <p className="text-gray-500 text-sm mt-4">
+            © 2025 Promise Kingdom Community Ministries. All rights reserved.
+          </p>
         </div>
       </footer>
     </div>

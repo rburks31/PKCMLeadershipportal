@@ -62,7 +62,23 @@ export default function Layout({ children }: LayoutProps) {
       </nav>
 
       {/* Main Content */}
-      <main>{children}</main>
+      <main className="pb-16">{children}</main>
+      
+      {/* Footer */}
+      <footer className="bg-gray-900 text-white py-8 mt-auto">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="flex items-center justify-center space-x-2 mb-4">
+            <Church className="text-pastoral-blue text-2xl" />
+            <span className="text-xl font-bold">PKCM Leadership and Ministry Class</span>
+          </div>
+          <p className="text-gray-400">
+            Promise Kingdom Community Ministries - Equipping leaders for kingdom impact through biblical education and community.
+          </p>
+          <p className="text-gray-500 text-sm mt-4">
+            © 2025 Promise Kingdom Community Ministries. All rights reserved.
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }
