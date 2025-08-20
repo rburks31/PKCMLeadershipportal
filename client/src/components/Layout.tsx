@@ -48,7 +48,7 @@ export default function Layout({ children }: LayoutProps) {
                     <img 
                       src={logoImage} 
                       alt="PKCM Logo" 
-                      className="h-10 w-auto"
+                      className="h-10 w-auto pkcm-logo"
                     />
                     <div className="text-xl font-bold text-pastoral-primary">
                       PKCM Leadership

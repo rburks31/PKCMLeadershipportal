@@ -148,3 +148,14 @@
     background-color: var(--pastoral-gray);
   }
 }
+
+/* PKCM Logo styling - remove white background */
+.pkcm-logo {
+  mix-blend-mode: multiply;
+  background: transparent;
+}
+
+.pkcm-logo-darken {
+  background: transparent;
+  filter: brightness(0.95) contrast(1.1) saturate(1.1);
+}

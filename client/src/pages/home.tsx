@@ -30,7 +30,7 @@ export default function Home() {
             <img 
               src={logoImage} 
               alt="PKCM Logo" 
-              className="h-16 w-auto mr-4"
+              className="h-16 w-auto mr-4 pkcm-logo"
             />
             <div className="text-center">
               <h1 className="text-3xl font-bold text-gray-900 mb-2" data-testid="text-welcome">

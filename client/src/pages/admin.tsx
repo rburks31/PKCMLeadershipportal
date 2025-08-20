@@ -194,7 +194,7 @@ export default function AdminPanel() {
             <img 
               src={logoImage} 
               alt="PKCM Logo" 
-              className="h-12 w-auto mr-4"
+              className="h-12 w-auto mr-4 pkcm-logo"
             />
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2" data-testid="text-admin-title">

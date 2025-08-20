@@ -15,7 +15,7 @@ export default function Landing() {
               <img 
                 src={logoImage} 
                 alt="PKCM Logo" 
-                className="h-8 w-auto"
+                className="h-8 w-auto pkcm-logo"
               />
               <span className="text-xl font-bold text-gray-900">PKCM Leadership and Ministry Class</span>
             </div>
@@ -38,7 +38,7 @@ export default function Landing() {
               <img 
                 src={logoImage} 
                 alt="PKCM Logo" 
-                className="h-20 w-auto"
+                className="h-20 w-auto pkcm-logo-darken"
               />
             </div>
             <h1 className="text-4xl md:text-6xl font-bold mb-6">
