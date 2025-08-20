@@ -26,7 +26,6 @@ function Router() {
         <>
           <Route path="/" component={Landing} />
           <Route path="/auth" component={AuthPage} />
-          <Route component={Landing} />
         </>
       ) : (
         <>
