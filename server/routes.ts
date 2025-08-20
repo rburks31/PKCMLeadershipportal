@@ -39,7 +39,9 @@ import {
   systemSettings,
   liveClasses,
   liveClassAttendees,
-  liveClassResources
+  liveClassResources,
+  adminActivities,
+  adminOnboarding
 } from "@shared/schema";
 import { eq, desc, sql, count, avg, and } from "drizzle-orm";
 
@@ -987,6 +989,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching admin live classes:", error);
       res.status(500).json({ message: "Failed to fetch live classes" });
+    }
+  });
+
+  // Admin activity tracking routes
+  app.get("/api/admin/activities", isAuthenticated, async (req, res) => {
+    try {
+      const activities = await db.select()
+        .from(adminActivities)
+        .orderBy(desc(adminActivities.createdAt))
+        .limit(50);
+      
+      res.json(activities);
+    } catch (error) {
+      console.error("Error fetching admin activities:", error);
+      res.status(500).json({ message: "Failed to fetch activities" });
+    }
+  });
+
+  app.post("/api/admin/activities", isAuthenticated, async (req, res) => {
+    try {
+      const { action, entityType, entityId, details } = req.body;
+      const userId = (req.user as any)?.claims?.sub;
+      
+      const activity = await db.insert(adminActivities).values({
+        userId,
+        action,
+        entityType,
+        entityId,
+        details,
+        ipAddress: req.ip,
+        userAgent: req.headers["user-agent"]
+      }).returning();
+      
+      res.json(activity[0]);
+    } catch (error) {
+      console.error("Error creating admin activity:", error);
+      res.status(500).json({ message: "Failed to create activity" });
+    }
+  });
+
+  // Admin onboarding routes
+  app.get("/api/admin/onboarding", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any)?.claims?.sub;
+      const onboardingSteps = await db.select()
+        .from(adminOnboarding)
+        .where(eq(adminOnboarding.userId, userId));
+      
+      res.json(onboardingSteps);
+    } catch (error) {
+      console.error("Error fetching onboarding progress:", error);
+      res.status(500).json({ message: "Failed to fetch onboarding progress" });
+    }
+  });
+
+  app.post("/api/admin/onboarding/complete", isAuthenticated, async (req, res) => {
+    try {
+      const { step } = req.body;
+      const userId = (req.user as any)?.claims?.sub;
+      
+      const onboardingStep = await db.insert(adminOnboarding).values({
+        userId,
+        step,
+        completed: true,
+        completedAt: new Date()
+      }).returning();
+      
+      res.json(onboardingStep[0]);
+    } catch (error) {
+      console.error("Error completing onboarding step:", error);
+      res.status(500).json({ message: "Failed to complete onboarding step" });
     }
   });
 

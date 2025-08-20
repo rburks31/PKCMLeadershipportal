@@ -1,7 +1,7 @@
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,12 +23,18 @@ import {
   UserPlus,
   GraduationCap,
   Activity,
-  BarChart3
+  BarChart3,
+  TrendingUp,
+  Bell,
+  Video
 } from "lucide-react";
 import Layout from "@/components/Layout";
-import { useEffect } from "react";
 import logoImage from "@assets/SEVEN WEAPONS OF THE WEAPON_1755651386501.jpg";
 import { Link } from "wouter";
+import { AdminTooltip } from "@/components/AdminTooltip";
+import { AdminOnboardingTour, OnboardingStarter } from "@/components/AdminOnboardingTour";
+import { AdminQuickActions } from "@/components/AdminQuickActions";
+import { AdminActivityFeed } from "@/components/AdminActivityFeed";
 
 interface User {
   id: string;
@@ -80,6 +86,8 @@ export default function AdminPanel() {
   const { toast } = useToast();
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [selectedModule, setSelectedModule] = useState<Module | null>(null);
+  const [showOnboardingTour, setShowOnboardingTour] = useState(false);
+  const [isFirstTimeUser, setIsFirstTimeUser] = useState(false);
 
   // Redirect if not admin
   useEffect(() => {
@@ -115,6 +123,47 @@ export default function AdminPanel() {
     queryKey: ["/api/admin/analytics"],
     enabled: !!user && (user as any)?.role === 'admin',
   });
+
+  // Check for first time user and onboarding
+  const { data: onboardingData } = useQuery({
+    queryKey: ["/api/admin/onboarding"],
+    enabled: !!user && (user as any)?.role === 'admin',
+  });
+
+  useEffect(() => {
+    // Check if user has completed the tour
+    if (onboardingData && Array.isArray(onboardingData)) {
+      const completedTour = onboardingData.some((step: any) => 
+        step.step === 'tour_completed' && step.completed
+      );
+      setIsFirstTimeUser(!completedTour);
+    }
+  }, [onboardingData]);
+
+  // Quick action handlers
+  const handleCreateCourse = () => {
+    toast({ title: "Create Course", description: "Course creation functionality will be available here" });
+  };
+
+  const handleAddUser = () => {
+    toast({ title: "Add User", description: "User creation functionality will be available here" });
+  };
+
+  const handleScheduleClass = () => {
+    toast({ title: "Schedule Class", description: "Live class scheduling will be available here" });
+  };
+
+  const handleSendAnnouncement = () => {
+    toast({ title: "Send Announcement", description: "Announcement system will be available here" });
+  };
+
+  const handleViewReports = () => {
+    toast({ title: "View Reports", description: "Analytics dashboard will be available here" });
+  };
+
+  const handleManageSettings = () => {
+    toast({ title: "Platform Settings", description: "Settings panel will be available here" });
+  };
 
   // Mutations
   const updateUserRoleMutation = useMutation({
@@ -189,7 +238,13 @@ export default function AdminPanel() {
   return (
     <Layout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
+        <div className="mb-8" data-testid="admin-dashboard-overview">
+          {/* Onboarding Tour */}
+          <AdminOnboardingTour 
+            isOpen={showOnboardingTour} 
+            onClose={() => setShowOnboardingTour(false)} 
+          />
+          
           <div className="flex items-center justify-center mb-6">
             <img 
               src={logoImage} 
@@ -205,6 +260,13 @@ export default function AdminPanel() {
           <p className="text-pastoral-gray text-center">
             Manage courses, users, and monitor student activity for PKCM Leadership and Ministry Class
           </p>
+          
+          {/* Onboarding Starter for first-time users */}
+          {isFirstTimeUser && (
+            <div className="mt-6">
+              <OnboardingStarter onStart={() => setShowOnboardingTour(true)} />
+            </div>
+          )}
         </div>
 
         <Tabs defaultValue="overview" className="space-y-6">
@@ -213,15 +275,15 @@ export default function AdminPanel() {
               <BarChart3 className="w-4 h-4 mr-2" />
               Overview
             </TabsTrigger>
-            <TabsTrigger value="courses" data-testid="tab-courses">
+            <TabsTrigger value="courses" data-testid="admin-nav-courses">
               <BookOpen className="w-4 h-4 mr-2" />
               Courses
             </TabsTrigger>
-            <TabsTrigger value="users" data-testid="tab-users">
+            <TabsTrigger value="users" data-testid="admin-nav-users">
               <Users className="w-4 h-4 mr-2" />
               Users
             </TabsTrigger>
-            <TabsTrigger value="discussions" data-testid="tab-discussions">
+            <TabsTrigger value="discussions" data-testid="admin-nav-discussions">
               <MessageCircle className="w-4 h-4 mr-2" />
               Discussions
             </TabsTrigger>
@@ -233,51 +295,113 @@ export default function AdminPanel() {
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <Card data-testid="card-total-users">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{(analytics as any)?.total_users || 0}</div>
-                  <p className="text-xs text-muted-foreground">Active platform users</p>
-                </CardContent>
-              </Card>
-              <Card data-testid="card-total-courses">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Courses</CardTitle>
-                  <BookOpen className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{(analytics as any)?.total_courses || 0}</div>
-                  <p className="text-xs text-muted-foreground">Published and draft</p>
-                </CardContent>
-              </Card>
-              <Card data-testid="card-active-discussions">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Active Discussions</CardTitle>
-                  <MessageCircle className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{(analytics as any)?.active_discussions || 0}</div>
-                  <p className="text-xs text-muted-foreground">Recent conversations</p>
-                </CardContent>
-              </Card>
-              <Card data-testid="card-completion-rate">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Completion Rate</CardTitle>
-                  <GraduationCap className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{Math.round((analytics as any)?.completion_rate) || 0}%</div>
-                  <p className="text-xs text-muted-foreground">Average course progress</p>
-                </CardContent>
-              </Card>
+            {/* Quick Actions Section with enhanced admin features */}
+            <div className="mb-8" data-testid="admin-quick-actions">
+              <AdminQuickActions
+                actions={[
+                  {
+                    title: "Create Course",
+                    description: "Add a new course to the platform",
+                    icon: BookOpen,
+                    action: handleCreateCourse,
+                    color: "bg-blue-500"
+                  },
+                  {
+                    title: "Add User", 
+                    description: "Register a new student or instructor",
+                    icon: UserPlus,
+                    action: handleAddUser,
+                    color: "bg-green-500"
+                  },
+                  {
+                    title: "Schedule Live Class",
+                    description: "Set up a new live class session",
+                    icon: Video,
+                    action: handleScheduleClass,
+                    color: "bg-purple-500"
+                  },
+                  {
+                    title: "Send Announcement",
+                    description: "Broadcast message to all users",
+                    icon: Bell,
+                    action: handleSendAnnouncement,
+                    color: "bg-orange-500"
+                  },
+                  {
+                    title: "View Reports",
+                    description: "Access detailed analytics",
+                    icon: BarChart3,
+                    action: handleViewReports,
+                    color: "bg-indigo-500"
+                  },
+                  {
+                    title: "Platform Settings",
+                    description: "Configure system preferences",
+                    icon: Settings,
+                    action: handleManageSettings,
+                    color: "bg-gray-500"
+                  }
+                ]}
+              />
             </div>
 
-            {/* Recent Activity */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <AdminTooltip content="Track the total number of registered users including students, instructors, and administrators">
+                <Card data-testid="card-total-users">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{(analytics as any)?.total_users || 0}</div>
+                    <p className="text-xs text-muted-foreground">Active platform users</p>
+                  </CardContent>
+                </Card>
+              </AdminTooltip>
+              
+              <AdminTooltip content="Monitor all courses on the platform including published and draft courses">
+                <Card data-testid="card-total-courses">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Courses</CardTitle>
+                    <BookOpen className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{(analytics as any)?.total_courses || 0}</div>
+                    <p className="text-xs text-muted-foreground">Published and draft</p>
+                  </CardContent>
+                </Card>
+              </AdminTooltip>
+
+              <AdminTooltip content="View recent discussion activity and student engagement">
+                <Card data-testid="card-active-discussions">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Active Discussions</CardTitle>
+                    <MessageCircle className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{(analytics as any)?.active_discussions || 0}</div>
+                    <p className="text-xs text-muted-foreground">Recent conversations</p>
+                  </CardContent>
+                </Card>
+              </AdminTooltip>
+
+              <AdminTooltip content="Monitor overall course completion rates and student progress">
+                <Card data-testid="card-completion-rate">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Completion Rate</CardTitle>
+                    <GraduationCap className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{Math.round((analytics as any)?.completion_rate) || 0}%</div>
+                    <p className="text-xs text-muted-foreground">Average course progress</p>
+                  </CardContent>
+                </Card>
+              </AdminTooltip>
+
+            </div>
+
+            {/* Recent Activity with AdminActivityFeed */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" data-testid="admin-activity-feed">
               <Card>
                 <CardHeader>
                   <CardTitle>Student Progress Overview</CardTitle>
@@ -297,24 +421,8 @@ export default function AdminPanel() {
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Platform Activity</CardTitle>
-                  <CardDescription>Key engagement metrics</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm">Active Users</span>
-                      <Badge variant="outline">{(users as any)?.filter?.((u: any) => u.is_active !== false)?.length || 0}</Badge>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm">Published Courses</span>
-                      <Badge variant="default">{(courses as any)?.filter?.((c: any) => c.is_published !== false)?.length || 0}</Badge>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              {/* Enhanced Activity Feed Component */}
+              <AdminActivityFeed />
             </div>
           </TabsContent>
 

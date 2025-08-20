@@ -349,6 +349,29 @@ export const liveClassResources = pgTable("live_class_resources", {
   createdAt: timestamp("created_at").defaultNow()
 });
 
+// Admin activity tracking for real-time feed
+export const adminActivities = pgTable("admin_activities", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  action: varchar("action").notNull(), // created, updated, deleted, etc.
+  entityType: varchar("entity_type").notNull(), // course, user, lesson, etc.
+  entityId: varchar("entity_id"),
+  details: jsonb("details"), // additional activity details
+  ipAddress: varchar("ip_address"),
+  userAgent: varchar("user_agent"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Admin onboarding progress tracking
+export const adminOnboarding = pgTable("admin_onboarding", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  step: varchar("step").notNull(),
+  completed: boolean("completed").default(false),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Relations for live classes
 export const liveClassesRelations = relations(liveClasses, ({ one, many }) => ({
   course: one(courses, {
@@ -404,6 +427,8 @@ export const insertSystemSettingSchema = createInsertSchema(systemSettings).omit
 export const insertLiveClassSchema = createInsertSchema(liveClasses).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertLiveClassAttendeeSchema = createInsertSchema(liveClassAttendees).omit({ id: true, createdAt: true });
 export const insertLiveClassResourceSchema = createInsertSchema(liveClassResources).omit({ id: true, createdAt: true });
+export const insertAdminActivitySchema = createInsertSchema(adminActivities).omit({ id: true, createdAt: true });
+export const insertAdminOnboardingSchema = createInsertSchema(adminOnboarding).omit({ id: true, createdAt: true });
 
 // Types
 export type UpsertUser = z.infer<typeof insertUserSchema>;
@@ -428,6 +453,8 @@ export type SystemSetting = typeof systemSettings.$inferSelect;
 export type LiveClass = typeof liveClasses.$inferSelect;
 export type LiveClassAttendee = typeof liveClassAttendees.$inferSelect;
 export type LiveClassResource = typeof liveClassResources.$inferSelect;
+export type AdminActivity = typeof adminActivities.$inferSelect;
+export type AdminOnboarding = typeof adminOnboarding.$inferSelect;
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertPayment = z.infer<typeof insertPaymentSchema>;
@@ -447,3 +474,5 @@ export type InsertDiscussion = z.infer<typeof insertDiscussionSchema>;
 export type InsertLiveClass = z.infer<typeof insertLiveClassSchema>;
 export type InsertLiveClassAttendee = z.infer<typeof insertLiveClassAttendeeSchema>;
 export type InsertLiveClassResource = z.infer<typeof insertLiveClassResourceSchema>;
+export type InsertAdminActivity = z.infer<typeof insertAdminActivitySchema>;
+export type InsertAdminOnboarding = z.infer<typeof insertAdminOnboardingSchema>;
