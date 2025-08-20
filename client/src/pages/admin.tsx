@@ -147,7 +147,11 @@ export default function AdminPanel() {
 
   // Quick action handlers
   const handleCreateCourse = () => {
-    toast({ title: "Create Course", description: "Course creation functionality will be available here" });
+    // Trigger the hidden CreateCourseDialog
+    const createCourseButton = document.querySelector('[data-testid="button-create-course"]') as HTMLElement;
+    if (createCourseButton) {
+      createCourseButton.click();
+    }
   };
 
   const handleAddUser = () => {
@@ -305,6 +309,11 @@ export default function AdminPanel() {
                 onViewReports={handleViewReports}
                 onManageSettings={handleManageSettings}
               />
+              
+              {/* Hidden CreateCourseDialog for Quick Actions */}
+              <div style={{ display: 'none' }}>
+                <CreateCourseDialog onCreateCourse={createCourseMutation.mutate} />
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
