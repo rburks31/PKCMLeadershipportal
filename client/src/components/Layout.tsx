@@ -20,7 +20,7 @@ export default function Layout({ children }: LayoutProps) {
               <Link href="/">
                 <div className="flex items-center space-x-2 cursor-pointer" data-testid="link-home">
                   <Church className="text-pastoral-blue text-2xl" />
-                  <span className="text-xl font-bold text-gray-900">Kingdom Leadership Academy</span>
+                  <span className="text-xl font-bold text-gray-900">PKCM Leadership and Ministry Class</span>
                 </div>
               </Link>
             </div>

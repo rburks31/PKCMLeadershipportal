@@ -22,7 +22,7 @@ export default function Home() {
         {/* Welcome Section */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2" data-testid="text-welcome">
-            Welcome to Kingdom Leadership Academy
+            Welcome to PKCM Leadership and Ministry Class
           </h1>
           <p className="text-pastoral-gray">
             Continue your leadership journey and transform your ministry through biblical training.

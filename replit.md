@@ -1,8 +1,8 @@
-# Kingdom Leadership Academy Learning Management System
+# PKCM Leadership and Ministry Class Learning Management System
 
 ## Overview
 
-Kingdom Leadership Academy is a comprehensive learning management system designed for pastoral and ministry leadership training. The platform provides a complete educational experience with courses, modules, lessons, video content, quizzes, discussion forums, and certificate generation. The system supports both instructors and students with features for content delivery, progress tracking, and community engagement.
+PKCM Leadership and Ministry Class (Promise Kingdom Community Ministries) is a comprehensive learning management system designed for pastoral and ministry leadership training. The platform provides a complete educational experience with courses, modules, lessons, video content, quizzes, discussion forums, and certificate generation. The system supports both instructors and students with features for content delivery, progress tracking, and community engagement.
 
 ## User Preferences
 

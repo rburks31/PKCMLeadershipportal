@@ -12,7 +12,7 @@ export default function Landing() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-2">
               <Church className="text-pastoral-blue text-2xl" />
-              <span className="text-xl font-bold text-gray-900">Kingdom Leadership Academy</span>
+              <span className="text-xl font-bold text-gray-900">PKCM Leadership and Ministry Class</span>
             </div>
             <Button 
               onClick={() => window.location.href = "/api/login"}
@@ -33,7 +33,7 @@ export default function Landing() {
               Equip Leaders. Transform Lives.
             </h1>
             <p className="text-xl md:text-2xl mb-8 opacity-90 max-w-3xl mx-auto">
-              Comprehensive leadership and deliverance training for pastors and ministry leaders, 
+              Comprehensive leadership and ministry training for pastors and ministry leaders at Promise Kingdom Community Ministries, 
               designed to build strong, biblical foundations for kingdom impact.
             </p>
             <Button 
@@ -168,10 +168,10 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="flex items-center justify-center space-x-2 mb-4">
             <Church className="text-pastoral-blue text-2xl" />
-            <span className="text-xl font-bold">Kingdom Leadership Academy</span>
+            <span className="text-xl font-bold">PKCM Leadership and Ministry Class</span>
           </div>
           <p className="text-gray-400">
-            Equipping leaders for kingdom impact through biblical education and community.
+            Promise Kingdom Community Ministries - Equipping leaders for kingdom impact through biblical education and community.
           </p>
         </div>
       </footer>
