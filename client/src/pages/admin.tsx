@@ -262,6 +262,20 @@ export default function AdminPanel() {
                 console.log("Starting onboarding tour...");
                 setShowOnboardingTour(true);
               }} />
+              {/* Debug test button */}
+              <div className="mt-4 p-4 bg-yellow-100 border border-yellow-300 rounded">
+                <p className="text-sm text-yellow-800 mb-2">Debug: Tour state - showOnboardingTour: {showOnboardingTour ? 'true' : 'false'}</p>
+                <Button 
+                  onClick={() => {
+                    console.log("Manual tour toggle clicked");
+                    setShowOnboardingTour(!showOnboardingTour);
+                  }}
+                  variant="outline"
+                  size="sm"
+                >
+                  Manual Toggle Tour ({showOnboardingTour ? 'Stop' : 'Start'})
+                </Button>
+              </div>
             </div>
           )}
         </div>

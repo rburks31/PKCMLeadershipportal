@@ -5,6 +5,10 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { X, Play, SkipForward } from "lucide-react";
 
+// Debug: Check if Joyride is properly imported
+console.log("Joyride imported:", Joyride);
+console.log("STATUS imported:", STATUS);
+
 const tourSteps: Step[] = [
   {
     target: '[data-testid="admin-dashboard-overview"]',
@@ -159,29 +163,39 @@ export function AdminOnboardingTour({ isOpen, onClose }: AdminOnboardingTourProp
     },
   };
 
-  if (!isRunning) return null;
+  console.log("Rendering Joyride with isRunning:", isRunning, "stepIndex:", stepIndex);
+  
+  if (!isRunning) {
+    console.log("Joyride not running, returning null");
+    return null;
+  }
 
   return (
-    <Joyride
-      steps={tourSteps}
-      run={isRunning}
-      stepIndex={stepIndex}
-      callback={handleJoyrideCallback}
-      continuous
-      showProgress
-      showSkipButton
-      styles={customStyles}
-      locale={{
-        back: "Back",
-        close: "Close",
-        last: "Finish Tour",
-        next: "Next",
-        skip: "Skip Tour",
-      }}
-      floaterProps={{
-        disableAnimation: false,
-      }}
-    />
+    <div>
+      <Joyride
+        steps={tourSteps}
+        run={isRunning}
+        stepIndex={stepIndex}
+        callback={handleJoyrideCallback}
+        continuous={true}
+        showProgress={true}
+        showSkipButton={true}
+        styles={customStyles}
+        disableOverlayClose={false}
+        disableScrollParentFix={true}
+        spotlightClicks={false}
+        locale={{
+          back: "Back",
+          close: "Close",
+          last: "Finish Tour",
+          next: "Next",
+          skip: "Skip Tour",
+        }}
+        floaterProps={{
+          disableAnimation: false,
+        }}
+      />
+    </div>
   );
 }
 
