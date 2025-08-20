@@ -247,16 +247,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin middleware to check admin role
   const isAdmin = async (req: any, res: any, next: any) => {
     const user = req.user;
-    if (!user || !user.claims || !user.claims.sub) {
+    if (!user) {
       return res.status(401).json({ message: "Unauthorized" });
     }
     
-    const userData = await storage.getUser(user.claims.sub);
-    if (!userData || userData.role !== 'admin') {
+    // Check if user has admin role directly from the user object
+    if (user.role !== 'admin') {
       return res.status(403).json({ message: "Admin access required" });
     }
     
-    req.adminUser = userData;
+    req.adminUser = user;
     next();
   };
 
