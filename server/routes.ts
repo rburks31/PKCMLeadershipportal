@@ -1004,12 +1004,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/live-classes", isAuthenticated, async (req: any, res) => {
     try {
       const user = req.user;
-      if (!user || !user.claims || !user.claims.sub) {
+      if (!user || !user.id) {
         return res.status(401).json({ message: "Unauthorized" });
       }
       
-      const userData = await storage.getUser(user.claims.sub);
-      if (!userData || !["admin", "instructor"].includes(userData.role)) {
+      if (!["admin", "instructor"].includes(user.role)) {
         return res.status(403).json({ message: "Instructor or admin access required" });
       }
 
@@ -1181,8 +1180,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Live class not found" });
       }
 
-      const userData = await storage.getUser(userId);
-      if (!userData || (!["admin", "instructor"].includes(userData.role) && liveClass.instructorId !== userId)) {
+      if (!["admin", "instructor"].includes(req.user.role) && liveClass.instructorId !== userId) {
         return res.status(403).json({ message: "Only the instructor or admin can update class status" });
       }
 
