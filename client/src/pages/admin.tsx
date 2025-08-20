@@ -26,7 +26,9 @@ import {
   BarChart3,
   TrendingUp,
   Bell,
-  Video
+  Video,
+  ArrowLeft,
+  ArrowRight
 } from "lucide-react";
 import Layout from "@/components/Layout";
 import logoImage from "@assets/SEVEN WEAPONS OF THE WEAPON_1755651386501.jpg";
@@ -262,20 +264,7 @@ export default function AdminPanel() {
                 console.log("Starting onboarding tour...");
                 setShowOnboardingTour(true);
               }} />
-              {/* Debug test button */}
-              <div className="mt-4 p-4 bg-yellow-100 border border-yellow-300 rounded">
-                <p className="text-sm text-yellow-800 mb-2">Debug: Tour state - showOnboardingTour: {showOnboardingTour ? 'true' : 'false'}</p>
-                <Button 
-                  onClick={() => {
-                    console.log("Manual tour toggle clicked");
-                    setShowOnboardingTour(!showOnboardingTour);
-                  }}
-                  variant="outline"
-                  size="sm"
-                >
-                  Manual Toggle Tour ({showOnboardingTour ? 'Stop' : 'Start'})
-                </Button>
-              </div>
+
             </div>
           )}
         </div>
@@ -587,18 +576,123 @@ export default function AdminPanel() {
 }
 
 // Dialog Components
-function CreateCourseDialog({ onCreateCourse }: { onCreateCourse: (data: { title: string; description: string }) => void }) {
+function CreateCourseDialog({ onCreateCourse }: { onCreateCourse: (data: any) => void }) {
   const [open, setOpen] = useState(false);
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
+  const [step, setStep] = useState(1);
+  const [courseData, setCourseData] = useState({
+    title: "",
+    description: "",
+    modules: [] as Array<{
+      title: string;
+      description: string;
+      order: number;
+      lessons: Array<{
+        title: string;
+        content: string;
+        video_url?: string;
+        order: number;
+      }>;
+    }>
+  });
+
+  const addModule = () => {
+    setCourseData(prev => ({
+      ...prev,
+      modules: [...prev.modules, {
+        title: "",
+        description: "",
+        order: prev.modules.length + 1,
+        lessons: []
+      }]
+    }));
+  };
+
+  const updateModule = (index: number, field: string, value: string) => {
+    setCourseData(prev => ({
+      ...prev,
+      modules: prev.modules.map((module, i) => 
+        i === index ? { ...module, [field]: value } : module
+      )
+    }));
+  };
+
+  const removeModule = (index: number) => {
+    setCourseData(prev => ({
+      ...prev,
+      modules: prev.modules.filter((_, i) => i !== index)
+    }));
+  };
+
+  const addLesson = (moduleIndex: number) => {
+    setCourseData(prev => ({
+      ...prev,
+      modules: prev.modules.map((module, i) => 
+        i === moduleIndex 
+          ? {
+              ...module, 
+              lessons: [...module.lessons, {
+                title: "",
+                content: "",
+                video_url: "",
+                order: module.lessons.length + 1
+              }]
+            }
+          : module
+      )
+    }));
+  };
+
+  const updateLesson = (moduleIndex: number, lessonIndex: number, field: string, value: string) => {
+    setCourseData(prev => ({
+      ...prev,
+      modules: prev.modules.map((module, i) => 
+        i === moduleIndex 
+          ? {
+              ...module,
+              lessons: module.lessons.map((lesson, j) =>
+                j === lessonIndex ? { ...lesson, [field]: value } : lesson
+              )
+            }
+          : module
+      )
+    }));
+  };
+
+  const removeLesson = (moduleIndex: number, lessonIndex: number) => {
+    setCourseData(prev => ({
+      ...prev,
+      modules: prev.modules.map((module, i) => 
+        i === moduleIndex 
+          ? {
+              ...module,
+              lessons: module.lessons.filter((_, j) => j !== lessonIndex)
+            }
+          : module
+      )
+    }));
+  };
 
   const handleSubmit = () => {
-    if (title.trim()) {
-      onCreateCourse({ title, description });
-      setTitle("");
-      setDescription("");
+    if (courseData.title.trim()) {
+      onCreateCourse(courseData);
+      setCourseData({
+        title: "",
+        description: "",
+        modules: []
+      });
+      setStep(1);
       setOpen(false);
     }
+  };
+
+  const handleClose = () => {
+    setCourseData({
+      title: "",
+      description: "",
+      modules: []
+    });
+    setStep(1);
+    setOpen(false);
   };
 
   return (
@@ -609,40 +703,185 @@ function CreateCourseDialog({ onCreateCourse }: { onCreateCourse: (data: { title
           Create Course
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Create New Course</DialogTitle>
-          <DialogDescription>Add a new course to the platform</DialogDescription>
+          <DialogTitle>Create New Course - Step {step} of 3</DialogTitle>
+          <DialogDescription>
+            {step === 1 && "Enter basic course information"}
+            {step === 2 && "Add modules to organize your course content"}
+            {step === 3 && "Add lessons to each module"}
+          </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="course-title">Course Title</Label>
-            <Input 
-              id="course-title" 
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Enter course title"
-              data-testid="input-course-title"
-            />
+
+        {step === 1 && (
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="course-title">Course Title</Label>
+              <Input 
+                id="course-title" 
+                value={courseData.title}
+                onChange={(e) => setCourseData(prev => ({ ...prev, title: e.target.value }))}
+                placeholder="e.g., Biblical Leadership Foundations"
+                data-testid="input-course-title"
+              />
+            </div>
+            <div>
+              <Label htmlFor="course-description">Description</Label>
+              <Textarea 
+                id="course-description"
+                value={courseData.description}
+                onChange={(e) => setCourseData(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="Describe what students will learn in this course"
+                data-testid="textarea-course-description"
+              />
+            </div>
           </div>
-          <div>
-            <Label htmlFor="course-description">Description</Label>
-            <Textarea 
-              id="course-description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Enter course description"
-              data-testid="textarea-course-description"
-            />
+        )}
+
+        {step === 2 && (
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-medium">Course Modules</h3>
+              <Button type="button" size="sm" onClick={addModule} data-testid="button-add-module">
+                <Plus className="w-4 h-4 mr-1" />
+                Add Module
+              </Button>
+            </div>
+            {courseData.modules.map((module, index) => (
+              <Card key={index} className="p-4">
+                <div className="space-y-3">
+                  <div className="flex justify-between items-start">
+                    <h4 className="font-medium">Module {index + 1}</h4>
+                    <Button 
+                      type="button" 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => removeModule(index)}
+                      data-testid={`button-remove-module-${index}`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  <Input
+                    value={module.title}
+                    onChange={(e) => updateModule(index, 'title', e.target.value)}
+                    placeholder="Module title"
+                    data-testid={`input-module-title-${index}`}
+                  />
+                  <Textarea
+                    value={module.description}
+                    onChange={(e) => updateModule(index, 'description', e.target.value)}
+                    placeholder="Module description"
+                    data-testid={`textarea-module-description-${index}`}
+                  />
+                </div>
+              </Card>
+            ))}
+            {courseData.modules.length === 0 && (
+              <div className="text-center py-8 text-gray-500">
+                No modules added yet. Click "Add Module" to get started.
+              </div>
+            )}
           </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)} data-testid="button-cancel">
-            Cancel
-          </Button>
-          <Button onClick={handleSubmit} data-testid="button-submit-course">
-            Create Course
-          </Button>
+        )}
+
+        {step === 3 && (
+          <div className="space-y-6">
+            <h3 className="text-lg font-medium">Course Lessons</h3>
+            {courseData.modules.map((module, moduleIndex) => (
+              <Card key={moduleIndex} className="p-4">
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h4 className="font-medium">{module.title || `Module ${moduleIndex + 1}`}</h4>
+                    <Button 
+                      type="button" 
+                      size="sm" 
+                      onClick={() => addLesson(moduleIndex)}
+                      data-testid={`button-add-lesson-${moduleIndex}`}
+                    >
+                      <Plus className="w-4 h-4 mr-1" />
+                      Add Lesson
+                    </Button>
+                  </div>
+                  {module.lessons.map((lesson, lessonIndex) => (
+                    <div key={lessonIndex} className="border rounded-lg p-3 space-y-3">
+                      <div className="flex justify-between items-start">
+                        <span className="text-sm font-medium">Lesson {lessonIndex + 1}</span>
+                        <Button 
+                          type="button" 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => removeLesson(moduleIndex, lessonIndex)}
+                          data-testid={`button-remove-lesson-${moduleIndex}-${lessonIndex}`}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      <Input
+                        value={lesson.title}
+                        onChange={(e) => updateLesson(moduleIndex, lessonIndex, 'title', e.target.value)}
+                        placeholder="Lesson title"
+                        data-testid={`input-lesson-title-${moduleIndex}-${lessonIndex}`}
+                      />
+                      <Textarea
+                        value={lesson.content}
+                        onChange={(e) => updateLesson(moduleIndex, lessonIndex, 'content', e.target.value)}
+                        placeholder="Lesson content and teaching material"
+                        rows={3}
+                        data-testid={`textarea-lesson-content-${moduleIndex}-${lessonIndex}`}
+                      />
+                      <Input
+                        value={lesson.video_url || ""}
+                        onChange={(e) => updateLesson(moduleIndex, lessonIndex, 'video_url', e.target.value)}
+                        placeholder="Video URL (optional)"
+                        data-testid={`input-lesson-video-${moduleIndex}-${lessonIndex}`}
+                      />
+                    </div>
+                  ))}
+                  {module.lessons.length === 0 && (
+                    <div className="text-center py-4 text-gray-500 text-sm">
+                      No lessons in this module yet.
+                    </div>
+                  )}
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        <DialogFooter className="flex justify-between">
+          <div className="flex gap-2">
+            {step > 1 && (
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setStep(step - 1)}
+                data-testid="button-prev-step"
+              >
+                <ArrowLeft className="w-4 h-4 mr-1" />
+                Previous
+              </Button>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleClose} data-testid="button-cancel">
+              Cancel
+            </Button>
+            {step < 3 ? (
+              <Button 
+                onClick={() => setStep(step + 1)} 
+                disabled={step === 1 && !courseData.title.trim()}
+                data-testid="button-next-step"
+              >
+                Next
+                <ArrowRight className="w-4 h-4 ml-1" />
+              </Button>
+            ) : (
+              <Button onClick={handleSubmit} data-testid="button-submit-course">
+                Create Course
+              </Button>
+            )}
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

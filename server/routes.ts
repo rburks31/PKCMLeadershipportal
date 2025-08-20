@@ -335,10 +335,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/admin/courses", isAuthenticated, isAdmin, async (req: any, res) => {
     try {
-      const courseData = insertCourseSchema.parse(req.body);
-      courseData.instructorId = req.adminUser.id; // Default to admin as instructor
+      const { modules: moduleData, ...courseFields } = req.body;
       
+      // Validate course data
+      const courseData = insertCourseSchema.parse(courseFields);
+      courseData.instructorId = req.adminUser.id;
+      
+      // Create course
       const [newCourse] = await db.insert(courses).values(courseData).returning();
+      
+      // Create modules and lessons if provided
+      if (moduleData && moduleData.length > 0) {
+        for (const moduleInfo of moduleData) {
+          const [newModule] = await db.insert(modules).values({
+            courseId: newCourse.id,
+            title: moduleInfo.title,
+            description: moduleInfo.description,
+            orderIndex: moduleInfo.order || 1,
+          }).returning();
+          
+          // Create lessons for this module
+          if (moduleInfo.lessons && moduleInfo.lessons.length > 0) {
+            for (const lessonInfo of moduleInfo.lessons) {
+              await db.insert(lessons).values({
+                moduleId: newModule.id,
+                title: lessonInfo.title,
+                content: lessonInfo.content,
+                videoUrl: lessonInfo.video_url || null,
+                orderIndex: lessonInfo.order || 1,
+                isPublished: true, // Auto-publish lessons for admin-created courses
+              });
+            }
+          }
+        }
+      }
+      
+      // Fetch the complete course with modules and lessons
+      const completeNewCourse = await db.query.courses.findFirst({
+        where: eq(courses.id, newCourse.id),
+        with: {
+          instructor: {
+            columns: { firstName: true, lastName: true, email: true }
+          },
+          modules: {
+            with: {
+              lessons: true
+            }
+          }
+        }
+      });
       
       // Log the action
       await db.insert(auditLogs).values({
@@ -346,12 +391,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         action: "create_course",
         resourceType: "course",
         resourceId: newCourse.id.toString(),
-        details: { title: newCourse.title },
+        details: { 
+          title: newCourse.title,
+          modulesCount: moduleData?.length || 0,
+          lessonsCount: moduleData?.reduce((acc: number, mod: any) => acc + (mod.lessons?.length || 0), 0) || 0
+        },
         ipAddress: req.ip,
         userAgent: req.get("User-Agent")
       });
 
-      res.status(201).json(newCourse);
+      res.status(201).json(completeNewCourse);
     } catch (error) {
       console.error("Error creating course:", error);
       res.status(500).json({ message: "Failed to create course" });
