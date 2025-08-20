@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
+import { sendWelcomeEmail } from "./emailService";
 import { 
   insertCourseSchema, 
   insertDiscussionSchema,
@@ -270,6 +271,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         role,
         isActive: true
       });
+
+      // Send welcome email
+      try {
+        const emailSent = await sendWelcomeEmail(email, `${firstName} ${lastName}`, role);
+        if (emailSent) {
+          console.log(`Welcome email sent successfully to ${email}`);
+        } else {
+          console.error(`Failed to send welcome email to ${email}`);
+        }
+      } catch (emailError) {
+        console.error('Error sending welcome email:', emailError);
+        // Don't fail user creation if email fails
+      }
 
       res.status(201).json(newUser);
     } catch (error) {
