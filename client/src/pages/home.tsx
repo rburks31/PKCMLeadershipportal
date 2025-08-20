@@ -49,9 +49,9 @@ export default function Home() {
                 </Card>
               ))}
             </div>
-          ) : myCourses && myCourses.length > 0 ? (
+          ) : myCourses && Array.isArray(myCourses) && myCourses.length > 0 ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {myCourses.map((enrollment: any) => (
+              {(myCourses as any[]).map((enrollment: any) => (
                 <Card key={enrollment.id} className="hover:shadow-lg transition-shadow" data-testid={`card-enrolled-course-${enrollment.course.id}`}>
                   <CardHeader>
                     <div className="flex items-center justify-between">
@@ -122,9 +122,9 @@ export default function Home() {
                 </Card>
               ))}
             </div>
-          ) : allCourses && allCourses.length > 0 ? (
+          ) : allCourses && Array.isArray(allCourses) && allCourses.length > 0 ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {allCourses.map((course: any) => (
+              {(allCourses as any[]).map((course: any) => (
                 <Card key={course.id} className="hover:shadow-lg transition-shadow" data-testid={`card-course-${course.id}`}>
                   <CardHeader>
                     <div className="flex items-center justify-between">

@@ -38,11 +38,11 @@ export default function Layout({ children }: LayoutProps) {
               <div className="relative">
                 <div className="flex items-center space-x-2 text-gray-700">
                   <img 
-                    src={user?.profileImageUrl || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=32&h=32&fit=crop&crop=face"} 
+                    src={(user as any)?.profileImageUrl || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=32&h=32&fit=crop&crop=face"} 
                     alt="User avatar" 
                     className="w-8 h-8 rounded-full" 
                   />
-                  <span data-testid="text-user-name">{user?.firstName || "Student"}</span>
+                  <span data-testid="text-user-name">{(user as any)?.firstName || "Student"}</span>
                   <Button
                     variant="ghost"
                     size="sm"
