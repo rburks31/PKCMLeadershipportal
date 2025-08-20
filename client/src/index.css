@@ -153,9 +153,23 @@
 .pkcm-logo {
   mix-blend-mode: multiply;
   background: transparent;
+  filter: brightness(1.1) contrast(1.2);
 }
 
 .pkcm-logo-darken {
   background: transparent;
-  filter: brightness(0.95) contrast(1.1) saturate(1.1);
+  mix-blend-mode: screen;
+  filter: brightness(1.2) contrast(1.3) saturate(1.2);
+}
+
+.pkcm-logo-hero {
+  background: transparent !important;
+  /* Use screen blend mode which makes white areas transparent on colored backgrounds */
+  mix-blend-mode: screen;
+  /* Invert then invert back to target white areas for transparency */
+  filter: invert(1) brightness(2) contrast(2) invert(1) drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+  /* Ensure no container interference */
+  box-shadow: none;
+  border: none;
+  outline: none;
 }

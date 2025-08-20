@@ -34,11 +34,12 @@ export default function Landing() {
       <section className="bg-gradient-to-r from-pastoral-blue to-blue-600 text-white py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <div className="flex justify-center mb-8">
+            <div className="flex justify-center mb-8" style={{ background: 'transparent' }}>
               <img 
                 src={logoImage} 
                 alt="PKCM Logo" 
-                className="h-20 w-auto pkcm-logo-darken"
+                className="h-20 w-auto pkcm-logo-hero"
+                style={{ background: 'transparent' }}
               />
             </div>
             <h1 className="text-4xl md:text-6xl font-bold mb-6">
