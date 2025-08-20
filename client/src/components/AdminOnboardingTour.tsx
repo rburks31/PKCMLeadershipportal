@@ -65,50 +65,62 @@ export function AdminOnboardingTour({ isOpen, onClose }: AdminOnboardingTourProp
     console.log("Custom tour isOpen changed:", isOpen);
     
     if (isOpen && stepIndex < tourSteps.length) {
-      // Find and highlight the target element
-      const targetSelector = tourSteps[stepIndex].target;
-      const element = document.querySelector(targetSelector);
-      console.log(`Highlighting element for step ${stepIndex}:`, targetSelector, !!element);
-      
-      if (element) {
-        setHighlightedElement(element);
+      // Add delay to ensure elements are rendered
+      const attemptHighlight = (retryCount = 0) => {
+        const targetSelector = tourSteps[stepIndex].target;
+        const element = document.querySelector(targetSelector);
+        console.log(`Highlighting element for step ${stepIndex}:`, targetSelector, !!element, `(attempt ${retryCount + 1})`);
         
-        // Add highlight styles
-        element.classList.add('tour-highlight');
-        
-        // Scroll into view
-        element.scrollIntoView({ 
-          behavior: 'smooth', 
-          block: 'center',
-          inline: 'center'
-        });
-        
-        // Add CSS for highlighting
-        if (!document.querySelector('#tour-styles')) {
-          const style = document.createElement('style');
-          style.id = 'tour-styles';
-          style.textContent = `
-            .tour-highlight {
-              outline: 3px solid hsl(var(--pastoral-blue)) !important;
-              outline-offset: 2px !important;
-              border-radius: 4px !important;
-              position: relative !important;
-              z-index: 1000 !important;
-            }
-            .tour-overlay {
-              position: fixed;
-              top: 0;
-              left: 0;
-              right: 0;
-              bottom: 0;
-              background: rgba(0, 0, 0, 0.4);
-              z-index: 999;
-              pointer-events: none;
-            }
-          `;
-          document.head.appendChild(style);
+        if (element) {
+          setHighlightedElement(element);
+          
+          // Add highlight styles
+          element.classList.add('tour-highlight');
+          
+          // Scroll into view
+          element.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center',
+            inline: 'center'
+          });
+          
+          // Add CSS for highlighting
+          if (!document.querySelector('#tour-styles')) {
+            const style = document.createElement('style');
+            style.id = 'tour-styles';
+            style.textContent = `
+              .tour-highlight {
+                outline: 4px solid #3b82f6 !important;
+                outline-offset: 4px !important;
+                border-radius: 8px !important;
+                position: relative !important;
+                z-index: 1000 !important;
+                background-color: rgba(59, 130, 246, 0.1) !important;
+                box-shadow: 0 0 20px rgba(59, 130, 246, 0.3) !important;
+              }
+              .tour-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.4);
+                z-index: 999;
+                pointer-events: none;
+              }
+            `;
+            document.head.appendChild(style);
+          }
+        } else if (retryCount < 5) {
+          // Retry after a short delay if element not found
+          setTimeout(() => attemptHighlight(retryCount + 1), 200);
+        } else {
+          console.warn(`Could not find element: ${targetSelector} after 5 attempts`);
         }
-      }
+      };
+
+      // Start highlighting attempt with initial delay
+      setTimeout(() => attemptHighlight(), 100);
     }
     
     return () => {

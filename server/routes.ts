@@ -1308,7 +1308,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin onboarding routes
   app.get("/api/admin/onboarding", isAuthenticated, async (req, res) => {
     try {
-      const userId = (req.user as any)?.claims?.sub;
+      const userId = (req.user as any)?.id;
       const onboardingSteps = await db.select()
         .from(adminOnboarding)
         .where(eq(adminOnboarding.userId, userId));
@@ -1323,7 +1323,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/admin/onboarding/complete", isAuthenticated, async (req, res) => {
     try {
       const { step } = req.body;
-      const userId = (req.user as any)?.claims?.sub;
+      const userId = (req.user as any)?.id;
       
       const onboardingStep = await db.insert(adminOnboarding).values({
         userId,
