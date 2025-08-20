@@ -230,7 +230,8 @@ export default function AdminPanel() {
                   <Users className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{users?.length || 0}</div>
+                  <div className="text-2xl font-bold">{(analytics as any)?.total_users || 0}</div>
+                  <p className="text-xs text-muted-foreground">Active platform users</p>
                 </CardContent>
               </Card>
               <Card data-testid="card-total-courses">
@@ -239,7 +240,8 @@ export default function AdminPanel() {
                   <BookOpen className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{courses?.length || 0}</div>
+                  <div className="text-2xl font-bold">{(analytics as any)?.total_courses || 0}</div>
+                  <p className="text-xs text-muted-foreground">Published and draft</p>
                 </CardContent>
               </Card>
               <Card data-testid="card-active-discussions">
@@ -248,7 +250,8 @@ export default function AdminPanel() {
                   <MessageCircle className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{discussions?.length || 0}</div>
+                  <div className="text-2xl font-bold">{(analytics as any)?.active_discussions || 0}</div>
+                  <p className="text-xs text-muted-foreground">Recent conversations</p>
                 </CardContent>
               </Card>
               <Card data-testid="card-completion-rate">
@@ -257,7 +260,49 @@ export default function AdminPanel() {
                   <GraduationCap className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{analytics?.completionRate || 0}%</div>
+                  <div className="text-2xl font-bold">{Math.round((analytics as any)?.completion_rate) || 0}%</div>
+                  <p className="text-xs text-muted-foreground">Average course progress</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Recent Activity */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Student Progress Overview</CardTitle>
+                  <CardDescription>Recent enrollment and completion activity</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm">Total Enrollments</span>
+                      <Badge variant="outline">{(analytics as any)?.total_enrollments || 0}</Badge>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm">Average Progress</span>
+                      <Badge variant="default">{Math.round((analytics as any)?.completion_rate) || 0}%</Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Platform Activity</CardTitle>
+                  <CardDescription>Key engagement metrics</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm">Active Users</span>
+                      <Badge variant="outline">{(users as any)?.filter?.((u: any) => u.is_active !== false)?.length || 0}</Badge>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm">Published Courses</span>
+                      <Badge variant="default">{(courses as any)?.filter?.((c: any) => c.is_published !== false)?.length || 0}</Badge>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -273,7 +318,7 @@ export default function AdminPanel() {
             <div className="grid gap-4">
               {coursesLoading ? (
                 <div>Loading courses...</div>
-              ) : courses?.map((course: Course) => (
+              ) : (courses as any)?.map?.((course: any) => (
                 <Card key={course.id} data-testid={`card-course-${course.id}`}>
                   <CardHeader>
                     <div className="flex justify-between items-start">
@@ -282,8 +327,8 @@ export default function AdminPanel() {
                         <CardDescription>{course.description}</CardDescription>
                       </div>
                       <div className="flex space-x-2">
-                        <Badge variant={course.isPublished ? "default" : "secondary"}>
-                          {course.isPublished ? "Published" : "Draft"}
+                        <Badge variant={course.is_published ? "default" : "secondary"}>
+                          {course.is_published ? "Published" : "Draft"}
                         </Badge>
                         <Button
                           variant="outline"
@@ -298,7 +343,7 @@ export default function AdminPanel() {
                   </CardHeader>
                   <CardContent>
                     <p className="text-sm text-muted-foreground">
-                      {course.modules?.length || 0} modules • Created {new Date(course.createdAt).toLocaleDateString()}
+                      {course.modules?.length || 0} modules • Created {new Date(course.created_at).toLocaleDateString()}
                     </p>
                   </CardContent>
                 </Card>
@@ -340,12 +385,12 @@ export default function AdminPanel() {
                         <tr>
                           <td colSpan={5} className="px-6 py-4 text-center">Loading users...</td>
                         </tr>
-                      ) : users?.map((user: User) => (
+                      ) : (users as any)?.map?.((user: any) => (
                         <tr key={user.id} data-testid={`row-user-${user.id}`}>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div>
                               <div className="text-sm font-medium text-gray-900">
-                                {user.firstName} {user.lastName}
+                                {user.first_name} {user.last_name}
                               </div>
                             </div>
                           </td>
@@ -358,7 +403,7 @@ export default function AdminPanel() {
                             </Badge>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {new Date(user.createdAt).toLocaleDateString()}
+                            {new Date(user.created_at).toLocaleDateString()}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <UserRoleDialog 
@@ -382,16 +427,16 @@ export default function AdminPanel() {
             <div className="grid gap-4">
               {discussionsLoading ? (
                 <div>Loading discussions...</div>
-              ) : discussions?.map((discussion: Discussion) => (
+              ) : (discussions as any)?.map?.((discussion: any) => (
                 <Card key={discussion.id} data-testid={`card-discussion-${discussion.id}`}>
                   <CardHeader>
                     <div className="flex justify-between items-start">
                       <div>
                         <CardTitle className="text-base">
-                          {discussion.user.firstName} {discussion.user.lastName}
+                          {discussion.first_name} {discussion.last_name}
                         </CardTitle>
                         <CardDescription>
-                          in {discussion.lesson.title} • {new Date(discussion.createdAt).toLocaleDateString()}
+                          in {discussion.lesson_title} • {new Date(discussion.created_at).toLocaleDateString()}
                         </CardDescription>
                       </div>
                     </div>

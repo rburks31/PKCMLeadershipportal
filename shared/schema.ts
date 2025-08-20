@@ -33,6 +33,9 @@ export const users = pgTable("users", {
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
   role: varchar("role").default("student"), // student, instructor, admin
+  isActive: boolean("is_active").default(true),
+  lastLoginAt: timestamp("last_login_at"),
+  preferences: jsonb("preferences"), // user settings and preferences
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -43,7 +46,14 @@ export const courses = pgTable("courses", {
   description: text("description"),
   instructorId: varchar("instructor_id").references(() => users.id).notNull(),
   imageUrl: varchar("image_url"),
+  price: integer("price"), // price in cents
   isPublished: boolean("is_published").default(false),
+  prerequisites: text("prerequisites").array(),
+  tags: text("tags").array(),
+  difficulty: varchar("difficulty"), // beginner, intermediate, advanced
+  estimatedHours: integer("estimated_hours"),
+  dripContent: boolean("drip_content").default(false),
+  releaseSchedule: jsonb("release_schedule"), // schedule for drip content
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -121,7 +131,99 @@ export const certificates = pgTable("certificates", {
   userId: varchar("user_id").references(() => users.id).notNull(),
   courseId: integer("course_id").references(() => courses.id, { onDelete: "cascade" }).notNull(),
   certificateUrl: varchar("certificate_url"),
+  templateId: integer("template_id"),
   issuedAt: timestamp("issued_at").defaultNow(),
+});
+
+// New tables for admin functionality
+export const payments = pgTable("payments", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  courseId: integer("course_id").references(() => courses.id).notNull(),
+  amount: integer("amount").notNull(), // in cents
+  currency: varchar("currency").default("USD"),
+  status: varchar("status").notNull(), // pending, completed, failed, refunded
+  paymentMethod: varchar("payment_method"), // stripe, paypal, etc.
+  transactionId: varchar("transaction_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const announcements = pgTable("announcements", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  authorId: varchar("author_id").references(() => users.id).notNull(),
+  targetAudience: varchar("target_audience").default("all"), // all, students, instructors
+  courseId: integer("course_id").references(() => courses.id), // null for global announcements
+  isPublished: boolean("is_published").default(false),
+  scheduledFor: timestamp("scheduled_for"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  type: varchar("type").notNull(), // announcement, achievement, reminder, system
+  isRead: boolean("is_read").default(false),
+  metadata: jsonb("metadata"), // additional data like course_id, lesson_id
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const contentLibrary = pgTable("content_library", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description"),
+  fileUrl: varchar("file_url").notNull(),
+  fileType: varchar("file_type").notNull(), // video, pdf, image, audio
+  fileSize: integer("file_size"), // in bytes
+  tags: text("tags").array(),
+  uploadedBy: varchar("uploaded_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const auditLogs = pgTable("audit_logs", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  action: varchar("action").notNull(), // create, update, delete, login, etc.
+  resourceType: varchar("resource_type").notNull(), // user, course, lesson, etc.
+  resourceId: varchar("resource_id"),
+  details: jsonb("details"), // additional context about the action
+  ipAddress: varchar("ip_address"),
+  userAgent: text("user_agent"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const courseReviews = pgTable("course_reviews", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  courseId: integer("course_id").references(() => courses.id, { onDelete: "cascade" }).notNull(),
+  rating: integer("rating").notNull(), // 1-5 stars
+  comment: text("comment"),
+  isPublished: boolean("is_published").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const instructorAssignments = pgTable("instructor_assignments", {
+  id: serial("id").primaryKey(),
+  instructorId: varchar("instructor_id").references(() => users.id).notNull(),
+  courseId: integer("course_id").references(() => courses.id, { onDelete: "cascade" }).notNull(),
+  assignedBy: varchar("assigned_by").references(() => users.id).notNull(),
+  permissions: text("permissions").array(), // create, edit, grade, etc.
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const systemSettings = pgTable("system_settings", {
+  id: serial("id").primaryKey(),
+  key: varchar("key").notNull().unique(),
+  value: text("value"),
+  description: text("description"),
+  category: varchar("category"), // branding, email, payments, etc.
+  updatedBy: varchar("updated_by").references(() => users.id),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Relations
@@ -211,6 +313,14 @@ export const insertLessonSchema = createInsertSchema(lessons).omit({ id: true, c
 export const insertEnrollmentSchema = createInsertSchema(enrollments).omit({ id: true, enrolledAt: true });
 export const insertLessonProgressSchema = createInsertSchema(lessonProgress).omit({ id: true, createdAt: true });
 export const insertDiscussionSchema = createInsertSchema(discussions).omit({ id: true, createdAt: true });
+export const insertPaymentSchema = createInsertSchema(payments).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertAnnouncementSchema = createInsertSchema(announcements).omit({ id: true, createdAt: true });
+export const insertNotificationSchema = createInsertSchema(notifications).omit({ id: true, createdAt: true });
+export const insertContentLibrarySchema = createInsertSchema(contentLibrary).omit({ id: true, createdAt: true });
+export const insertAuditLogSchema = createInsertSchema(auditLogs).omit({ id: true, createdAt: true });
+export const insertCourseReviewSchema = createInsertSchema(courseReviews).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertInstructorAssignmentSchema = createInsertSchema(instructorAssignments).omit({ id: true, createdAt: true });
+export const insertSystemSettingSchema = createInsertSchema(systemSettings).omit({ id: true, updatedAt: true });
 
 // Types
 export type UpsertUser = z.infer<typeof insertUserSchema>;
@@ -224,8 +334,24 @@ export type Discussion = typeof discussions.$inferSelect;
 export type Quiz = typeof quizzes.$inferSelect;
 export type QuizAttempt = typeof quizAttempts.$inferSelect;
 export type Certificate = typeof certificates.$inferSelect;
+export type Payment = typeof payments.$inferSelect;
+export type Announcement = typeof announcements.$inferSelect;
+export type Notification = typeof notifications.$inferSelect;
+export type ContentLibrary = typeof contentLibrary.$inferSelect;
+export type AuditLog = typeof auditLogs.$inferSelect;
+export type CourseReview = typeof courseReviews.$inferSelect;
+export type InstructorAssignment = typeof instructorAssignments.$inferSelect;
+export type SystemSetting = typeof systemSettings.$inferSelect;
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
+export type InsertPayment = z.infer<typeof insertPaymentSchema>;
+export type InsertAnnouncement = z.infer<typeof insertAnnouncementSchema>;
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+export type InsertContentLibrary = z.infer<typeof insertContentLibrarySchema>;
+export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
+export type InsertCourseReview = z.infer<typeof insertCourseReviewSchema>;
+export type InsertInstructorAssignment = z.infer<typeof insertInstructorAssignmentSchema>;
+export type InsertSystemSetting = z.infer<typeof insertSystemSettingSchema>;
 export type InsertCourse = z.infer<typeof insertCourseSchema>;
 export type InsertModule = z.infer<typeof insertModuleSchema>;
 export type InsertLesson = z.infer<typeof insertLessonSchema>;

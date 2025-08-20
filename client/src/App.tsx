@@ -9,6 +9,7 @@ import Landing from "@/pages/landing";
 import Home from "@/pages/home";
 import Course from "@/pages/course";
 import Lesson from "@/pages/lesson";
+import AdminPanel from "@/pages/admin";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -22,6 +23,7 @@ function Router() {
           <Route path="/" component={Home} />
           <Route path="/courses/:courseId" component={Course} />
           <Route path="/lessons/:lessonId" component={Lesson} />
+          <Route path="/admin" component={AdminPanel} />
         </>
       )}
       <Route component={NotFound} />

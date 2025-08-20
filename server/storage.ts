@@ -227,7 +227,7 @@ export class DatabaseStorage implements IStorage {
   // Discussion operations
   async getLessonDiscussions(lessonId: number): Promise<any[]> {
     return await db.query.discussions.findMany({
-      where: and(eq(discussions.lessonId, lessonId), eq(discussions.parentId, null)),
+      where: and(eq(discussions.lessonId, lessonId), sql`${discussions.parentId} IS NULL`),
       with: {
         user: true,
         replies: {
