@@ -459,6 +459,14 @@ export default function AdminPanel() {
                         <Button
                           variant="outline"
                           size="sm"
+                          onClick={() => window.open(`/courses/${course.id}`, '_blank')}
+                          data-testid={`button-preview-course-${course.id}`}
+                        >
+                          Preview as Student
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => deleteCourseMutation.mutate(course.id)}
                           data-testid={`button-delete-course-${course.id}`}
                         >

@@ -74,19 +74,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/courses/:id", async (req, res) => {
-    try {
-      const courseId = parseInt(req.params.id);
-      const course = await storage.getCourseWithModules(courseId);
-      if (!course) {
-        return res.status(404).json({ message: "Course not found" });
-      }
-      res.json(course);
-    } catch (error) {
-      console.error("Error fetching course:", error);
-      res.status(500).json({ message: "Failed to fetch course" });
-    }
-  });
+
 
   // Enrollment routes
   app.post("/api/courses/:id/enroll", isAuthenticated, async (req: any, res) => {
@@ -469,6 +457,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating course publish status:", error);
       res.status(500).json({ message: "Failed to update course status" });
+    }
+  });
+
+  // Student course access endpoints
+  app.get("/api/courses/:id", isAuthenticated, async (req, res) => {
+    try {
+      const courseId = parseInt(req.params.id);
+      
+      const course = await db.query.courses.findFirst({
+        where: eq(courses.id, courseId),
+        with: {
+          instructor: {
+            columns: { firstName: true, lastName: true, email: true }
+          },
+          modules: {
+            with: {
+              lessons: {
+                where: eq(lessons.isPublished, true) // Only show published lessons
+              }
+            },
+            orderBy: asc(modules.orderIndex)
+          }
+        }
+      });
+      
+      if (!course) {
+        return res.status(404).json({ message: "Course not found" });
+      }
+      
+      // Only show published courses to non-admin users
+      const user = req.user as any;
+      if (!course.isPublished && user?.role !== 'admin') {
+        return res.status(404).json({ message: "Course not found" });
+      }
+      
+      res.json(course);
+    } catch (error) {
+      console.error("Error fetching course:", error);
+      res.status(500).json({ message: "Failed to fetch course" });
     }
   });
 
