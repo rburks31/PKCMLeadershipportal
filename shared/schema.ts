@@ -305,6 +305,86 @@ export const discussionsRelations = relations(discussions, ({ one, many }) => ({
   }),
 }));
 
+// Live Classes
+export const liveClasses = pgTable("live_classes", {
+  id: serial("id").primaryKey(),
+  courseId: integer("course_id").references(() => courses.id).notNull(),
+  instructorId: varchar("instructor_id", { length: 255 }).references(() => users.id).notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  scheduledAt: timestamp("scheduled_at").notNull(),
+  duration: integer("duration").notNull(), // duration in minutes
+  platform: varchar("platform", { length: 50 }).notNull(), // 'zoom' or 'google_meet'
+  meetingId: varchar("meeting_id", { length: 255 }),
+  meetingUrl: text("meeting_url"),
+  meetingPassword: varchar("meeting_password", { length: 100 }),
+  status: varchar("status", { length: 50 }).default("scheduled").notNull(), // scheduled, live, completed, cancelled
+  maxAttendees: integer("max_attendees").default(100),
+  recordingUrl: text("recording_url"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+// Live Class Attendees
+export const liveClassAttendees = pgTable("live_class_attendees", {
+  id: serial("id").primaryKey(),
+  liveClassId: integer("live_class_id").references(() => liveClasses.id).notNull(),
+  userId: varchar("user_id", { length: 255 }).references(() => users.id).notNull(),
+  status: varchar("status", { length: 50 }).default("registered").notNull(), // registered, attended, missed
+  joinedAt: timestamp("joined_at"),
+  leftAt: timestamp("left_at"),
+  attendanceDuration: integer("attendance_duration"), // in minutes
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+// Live Class Resources
+export const liveClassResources = pgTable("live_class_resources", {
+  id: serial("id").primaryKey(),
+  liveClassId: integer("live_class_id").references(() => liveClasses.id).notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  type: varchar("type", { length: 50 }).notNull(), // presentation, document, video, link
+  url: text("url").notNull(),
+  description: text("description"),
+  uploadedBy: varchar("uploaded_by", { length: 255 }).references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+// Relations for live classes
+export const liveClassesRelations = relations(liveClasses, ({ one, many }) => ({
+  course: one(courses, {
+    fields: [liveClasses.courseId],
+    references: [courses.id],
+  }),
+  instructor: one(users, {
+    fields: [liveClasses.instructorId],
+    references: [users.id],
+  }),
+  attendees: many(liveClassAttendees),
+  resources: many(liveClassResources),
+}));
+
+export const liveClassAttendeesRelations = relations(liveClassAttendees, ({ one }) => ({
+  liveClass: one(liveClasses, {
+    fields: [liveClassAttendees.liveClassId],
+    references: [liveClasses.id],
+  }),
+  user: one(users, {
+    fields: [liveClassAttendees.userId],
+    references: [users.id],
+  }),
+}));
+
+export const liveClassResourcesRelations = relations(liveClassResources, ({ one }) => ({
+  liveClass: one(liveClasses, {
+    fields: [liveClassResources.liveClassId],
+    references: [liveClasses.id],
+  }),
+  uploadedByUser: one(users, {
+    fields: [liveClassResources.uploadedBy],
+    references: [users.id],
+  }),
+}));
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertCourseSchema = createInsertSchema(courses).omit({ id: true, createdAt: true, updatedAt: true });
@@ -321,6 +401,9 @@ export const insertAuditLogSchema = createInsertSchema(auditLogs).omit({ id: tru
 export const insertCourseReviewSchema = createInsertSchema(courseReviews).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertInstructorAssignmentSchema = createInsertSchema(instructorAssignments).omit({ id: true, createdAt: true });
 export const insertSystemSettingSchema = createInsertSchema(systemSettings).omit({ id: true, updatedAt: true });
+export const insertLiveClassSchema = createInsertSchema(liveClasses).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertLiveClassAttendeeSchema = createInsertSchema(liveClassAttendees).omit({ id: true, createdAt: true });
+export const insertLiveClassResourceSchema = createInsertSchema(liveClassResources).omit({ id: true, createdAt: true });
 
 // Types
 export type UpsertUser = z.infer<typeof insertUserSchema>;
@@ -342,6 +425,9 @@ export type AuditLog = typeof auditLogs.$inferSelect;
 export type CourseReview = typeof courseReviews.$inferSelect;
 export type InstructorAssignment = typeof instructorAssignments.$inferSelect;
 export type SystemSetting = typeof systemSettings.$inferSelect;
+export type LiveClass = typeof liveClasses.$inferSelect;
+export type LiveClassAttendee = typeof liveClassAttendees.$inferSelect;
+export type LiveClassResource = typeof liveClassResources.$inferSelect;
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertPayment = z.infer<typeof insertPaymentSchema>;
@@ -358,3 +444,6 @@ export type InsertLesson = z.infer<typeof insertLessonSchema>;
 export type InsertEnrollment = z.infer<typeof insertEnrollmentSchema>;
 export type InsertLessonProgress = z.infer<typeof insertLessonProgressSchema>;
 export type InsertDiscussion = z.infer<typeof insertDiscussionSchema>;
+export type InsertLiveClass = z.infer<typeof insertLiveClassSchema>;
+export type InsertLiveClassAttendee = z.infer<typeof insertLiveClassAttendeeSchema>;
+export type InsertLiveClassResource = z.infer<typeof insertLiveClassResourceSchema>;

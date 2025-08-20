@@ -10,13 +10,17 @@ import {
   insertContentLibrarySchema,
   insertCourseReviewSchema,
   insertSystemSettingSchema,
+  insertLiveClassSchema,
+  insertLiveClassAttendeeSchema,
   type User,
   type Course,
   type Payment,
   type Announcement,
   type ContentLibrary,
   type AuditLog,
-  type CourseReview
+  type CourseReview,
+  type LiveClass,
+  type LiveClassAttendee
 } from "@shared/schema";
 import { db } from "./db";
 import { 
@@ -32,7 +36,10 @@ import {
   auditLogs,
   courseReviews,
   instructorAssignments,
-  systemSettings
+  systemSettings,
+  liveClasses,
+  liveClassAttendees,
+  liveClassResources
 } from "@shared/schema";
 import { eq, desc, sql, count, avg, and } from "drizzle-orm";
 
@@ -646,6 +653,340 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching audit logs:", error);
       res.status(500).json({ message: "Failed to fetch audit logs" });
+    }
+  });
+
+  // ==== LIVE CLASSES ROUTES ====
+
+  // Get all live classes for a course
+  app.get("/api/courses/:courseId/live-classes", isAuthenticated, async (req, res) => {
+    try {
+      const courseId = parseInt(req.params.courseId);
+      
+      const classes = await db.query.liveClasses.findMany({
+        where: eq(liveClasses.courseId, courseId),
+        with: {
+          instructor: {
+            columns: { firstName: true, lastName: true, email: true }
+          },
+          attendees: {
+            with: {
+              user: {
+                columns: { firstName: true, lastName: true, email: true }
+              }
+            }
+          }
+        },
+        orderBy: [liveClasses.scheduledAt]
+      });
+
+      res.json(classes);
+    } catch (error) {
+      console.error("Error fetching live classes:", error);
+      res.status(500).json({ message: "Failed to fetch live classes" });
+    }
+  });
+
+  // Get upcoming live classes for user
+  app.get("/api/live-classes/upcoming", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      
+      const upcomingClasses = await db.execute(sql`
+        SELECT 
+          lc.*,
+          c.title as course_title,
+          u.first_name as instructor_first_name,
+          u.last_name as instructor_last_name,
+          lca.status as attendance_status
+        FROM ${liveClasses} lc
+        JOIN ${courses} c ON lc.course_id = c.id
+        JOIN ${users} u ON lc.instructor_id = u.id
+        LEFT JOIN ${liveClassAttendees} lca ON lc.id = lca.live_class_id AND lca.user_id = ${userId}
+        WHERE lc.scheduled_at > NOW()
+        AND (
+          lca.user_id IS NOT NULL OR 
+          EXISTS (
+            SELECT 1 FROM ${enrollments} e 
+            WHERE e.course_id = lc.course_id AND e.user_id = ${userId}
+          )
+        )
+        ORDER BY lc.scheduled_at ASC
+        LIMIT 10
+      `);
+
+      res.json(upcomingClasses.rows);
+    } catch (error) {
+      console.error("Error fetching upcoming classes:", error);
+      res.status(500).json({ message: "Failed to fetch upcoming classes" });
+    }
+  });
+
+  // Create a new live class (admin/instructor only)
+  app.post("/api/live-classes", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      if (!user || !user.claims || !user.claims.sub) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const userData = await storage.getUser(user.claims.sub);
+      if (!userData || !["admin", "instructor"].includes(userData.role)) {
+        return res.status(403).json({ message: "Instructor or admin access required" });
+      }
+
+      const liveClassData = insertLiveClassSchema.parse(req.body);
+      liveClassData.instructorId = user.claims.sub;
+
+      // Generate meeting URL based on platform
+      let meetingUrl = "";
+      let meetingId = "";
+      
+      if (liveClassData.platform === "zoom") {
+        // In a real implementation, you would call Zoom API here
+        meetingId = `zoom-${Date.now()}`;
+        meetingUrl = `https://zoom.us/j/${meetingId}`;
+      } else if (liveClassData.platform === "google_meet") {
+        // In a real implementation, you would call Google Meet API here
+        meetingId = `meet-${Date.now()}`;
+        meetingUrl = `https://meet.google.com/${meetingId}`;
+      }
+
+      liveClassData.meetingId = meetingId;
+      liveClassData.meetingUrl = meetingUrl;
+
+      const [newClass] = await db.insert(liveClasses).values(liveClassData).returning();
+
+      // Auto-enroll all course participants
+      if (liveClassData.courseId) {
+        const enrolledUsers = await db.execute(sql`
+          SELECT user_id FROM ${enrollments} 
+          WHERE course_id = ${liveClassData.courseId}
+        `);
+
+        const attendeePromises = enrolledUsers.rows.map((enrollment: any) =>
+          db.insert(liveClassAttendees).values({
+            liveClassId: newClass.id,
+            userId: enrollment.user_id,
+            status: "registered"
+          })
+        );
+
+        await Promise.all(attendeePromises);
+      }
+
+      // Log the action
+      await db.insert(auditLogs).values({
+        userId: user.claims.sub,
+        action: "create_live_class",
+        resourceType: "live_class",
+        resourceId: newClass.id.toString(),
+        details: { title: newClass.title, platform: newClass.platform },
+        ipAddress: req.ip,
+        userAgent: req.get("User-Agent")
+      });
+
+      res.status(201).json(newClass);
+    } catch (error) {
+      console.error("Error creating live class:", error);
+      res.status(500).json({ message: "Failed to create live class" });
+    }
+  });
+
+  // Register for a live class
+  app.post("/api/live-classes/:id/register", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const liveClassId = parseInt(req.params.id);
+
+      // Check if user is enrolled in the course
+      const liveClass = await db.query.liveClasses.findFirst({
+        where: eq(liveClasses.id, liveClassId),
+        with: { course: true }
+      });
+
+      if (!liveClass) {
+        return res.status(404).json({ message: "Live class not found" });
+      }
+
+      const enrollment = await db.query.enrollments.findFirst({
+        where: and(
+          eq(enrollments.courseId, liveClass.courseId),
+          eq(enrollments.userId, userId)
+        )
+      });
+
+      if (!enrollment) {
+        return res.status(403).json({ message: "You must be enrolled in the course to join this class" });
+      }
+
+      // Register for the class
+      await db.insert(liveClassAttendees).values({
+        liveClassId,
+        userId,
+        status: "registered"
+      }).onConflictDoUpdate({
+        target: [liveClassAttendees.liveClassId, liveClassAttendees.userId],
+        set: { status: "registered" }
+      });
+
+      res.json({ message: "Successfully registered for live class" });
+    } catch (error) {
+      console.error("Error registering for live class:", error);
+      res.status(500).json({ message: "Failed to register for live class" });
+    }
+  });
+
+  // Get live class details with meeting link
+  app.get("/api/live-classes/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const liveClassId = parseInt(req.params.id);
+
+      const liveClass = await db.query.liveClasses.findFirst({
+        where: eq(liveClasses.id, liveClassId),
+        with: {
+          course: true,
+          instructor: {
+            columns: { firstName: true, lastName: true, email: true }
+          },
+          resources: true
+        }
+      });
+
+      if (!liveClass) {
+        return res.status(404).json({ message: "Live class not found" });
+      }
+
+      // Check if user is registered
+      const attendee = await db.query.liveClassAttendees.findFirst({
+        where: and(
+          eq(liveClassAttendees.liveClassId, liveClassId),
+          eq(liveClassAttendees.userId, userId)
+        )
+      });
+
+      const userData = await storage.getUser(userId);
+      const isInstructor = userData?.role === "admin" || userData?.role === "instructor";
+
+      if (!attendee && !isInstructor) {
+        return res.status(403).json({ message: "You are not registered for this class" });
+      }
+
+      res.json({
+        ...liveClass,
+        attendeeStatus: attendee?.status || "not_registered",
+        canJoin: isInstructor || (attendee && ["registered", "attended"].includes(attendee.status))
+      });
+    } catch (error) {
+      console.error("Error fetching live class details:", error);
+      res.status(500).json({ message: "Failed to fetch live class details" });
+    }
+  });
+
+  // Update live class status (for instructors)
+  app.put("/api/live-classes/:id/status", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const liveClassId = parseInt(req.params.id);
+      const { status } = req.body;
+
+      if (!["scheduled", "live", "completed", "cancelled"].includes(status)) {
+        return res.status(400).json({ message: "Invalid status" });
+      }
+
+      const liveClass = await db.query.liveClasses.findFirst({
+        where: eq(liveClasses.id, liveClassId)
+      });
+
+      if (!liveClass) {
+        return res.status(404).json({ message: "Live class not found" });
+      }
+
+      const userData = await storage.getUser(userId);
+      if (!userData || (!["admin", "instructor"].includes(userData.role) && liveClass.instructorId !== userId)) {
+        return res.status(403).json({ message: "Only the instructor or admin can update class status" });
+      }
+
+      await db.update(liveClasses)
+        .set({ status, updatedAt: new Date() })
+        .where(eq(liveClasses.id, liveClassId));
+
+      res.json({ message: "Live class status updated successfully" });
+    } catch (error) {
+      console.error("Error updating live class status:", error);
+      res.status(500).json({ message: "Failed to update live class status" });
+    }
+  });
+
+  // Record attendance (when user joins)
+  app.post("/api/live-classes/:id/join", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const liveClassId = parseInt(req.params.id);
+
+      await db.update(liveClassAttendees)
+        .set({ 
+          status: "attended", 
+          joinedAt: new Date() 
+        })
+        .where(and(
+          eq(liveClassAttendees.liveClassId, liveClassId),
+          eq(liveClassAttendees.userId, userId)
+        ));
+
+      res.json({ message: "Attendance recorded" });
+    } catch (error) {
+      console.error("Error recording attendance:", error);
+      res.status(500).json({ message: "Failed to record attendance" });
+    }
+  });
+
+  // Get live class resources
+  app.get("/api/live-classes/:id/resources", isAuthenticated, async (req, res) => {
+    try {
+      const liveClassId = parseInt(req.params.id);
+
+      const resources = await db.query.liveClassResources.findMany({
+        where: eq(liveClassResources.liveClassId, liveClassId),
+        with: {
+          uploadedByUser: {
+            columns: { firstName: true, lastName: true }
+          }
+        }
+      });
+
+      res.json(resources);
+    } catch (error) {
+      console.error("Error fetching live class resources:", error);
+      res.status(500).json({ message: "Failed to fetch resources" });
+    }
+  });
+
+  // Admin: Get all live classes
+  app.get("/api/admin/live-classes", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const classes = await db.execute(sql`
+        SELECT 
+          lc.*,
+          c.title as course_title,
+          u.first_name as instructor_first_name,
+          u.last_name as instructor_last_name,
+          COUNT(lca.id) as total_attendees,
+          COUNT(CASE WHEN lca.status = 'attended' THEN 1 END) as attended_count
+        FROM ${liveClasses} lc
+        JOIN ${courses} c ON lc.course_id = c.id
+        JOIN ${users} u ON lc.instructor_id = u.id
+        LEFT JOIN ${liveClassAttendees} lca ON lc.id = lca.live_class_id
+        GROUP BY lc.id, c.title, u.first_name, u.last_name
+        ORDER BY lc.scheduled_at DESC
+        LIMIT 50
+      `);
+
+      res.json(classes.rows);
+    } catch (error) {
+      console.error("Error fetching admin live classes:", error);
+      res.status(500).json({ message: "Failed to fetch live classes" });
     }
   });
 

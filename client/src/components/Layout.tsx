@@ -8,7 +8,8 @@ import {
   Settings, 
   LogOut, 
   User,
-  Shield
+  Shield,
+  Video
 } from "lucide-react";
 
 interface LayoutProps {
@@ -28,6 +29,7 @@ export default function Layout({ children }: LayoutProps) {
   const navigation = [
     { name: "Home", href: "/", icon: Home, current: location === "/" },
     { name: "Courses", href: "/courses", icon: BookOpen, current: location.startsWith("/courses") },
+    { name: "Live Classes", href: "/live-classes", icon: Video, current: location === "/live-classes" },
     ...(isAdmin ? [{ name: "Admin Portal", href: "/admin", icon: Shield, current: location === "/admin" }] : []),
   ];
 

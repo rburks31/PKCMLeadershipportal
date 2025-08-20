@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import Layout from "@/components/Layout";
-import { Play, Clock, BookOpen, Users, Award } from "lucide-react";
+import { Play, Clock, BookOpen, Users, Award, Video, Calendar } from "lucide-react";
 
 export default function Home() {
   const { data: myCourses, isLoading: coursesLoading } = useQuery({
@@ -14,6 +14,10 @@ export default function Home() {
 
   const { data: allCourses, isLoading: allCoursesLoading } = useQuery({
     queryKey: ["/api/courses"],
+  });
+
+  const { data: upcomingClasses } = useQuery({
+    queryKey: ["/api/live-classes/upcoming"],
   });
 
   return (
@@ -99,6 +103,81 @@ export default function Home() {
             </Card>
           )}
         </section>
+
+        {/* Upcoming Live Classes Section */}
+        {upcomingClasses && (upcomingClasses as any[]).length > 0 && (
+          <section className="mb-12">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-semibold text-gray-900" data-testid="text-upcoming-classes">
+                Upcoming Live Classes
+              </h2>
+              <Link href="/live-classes">
+                <Button variant="outline" data-testid="button-view-all-classes">
+                  View All Classes
+                </Button>
+              </Link>
+            </div>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {(upcomingClasses as any[]).slice(0, 3).map((liveClass: any) => {
+                const scheduledDate = new Date(liveClass.scheduled_at);
+                const isLive = liveClass.status === "live";
+                
+                return (
+                  <Card key={liveClass.id} className="hover:shadow-lg transition-shadow" data-testid={`card-upcoming-class-${liveClass.id}`}>
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <Badge variant={isLive ? "default" : "secondary"} className={isLive ? "bg-red-500 hover:bg-red-600" : ""}>
+                          {isLive ? "Live Now" : "Scheduled"}
+                        </Badge>
+                        <div className="flex items-center space-x-1 text-sm text-muted-foreground">
+                          <Video className="w-4 h-4" />
+                          <span>{liveClass.platform === "zoom" ? "Zoom" : "Google Meet"}</span>
+                        </div>
+                      </div>
+                      <CardTitle className="text-lg">{liveClass.title}</CardTitle>
+                      <CardDescription>{liveClass.course_title}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                          <Calendar className="w-4 h-4" />
+                          <span>{scheduledDate.toLocaleDateString()}</span>
+                          <Clock className="w-4 h-4 ml-2" />
+                          <span>{scheduledDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        </div>
+                        
+                        {liveClass.instructor_first_name && (
+                          <p className="text-sm">
+                            <span className="font-medium">Instructor:</span> {liveClass.instructor_first_name} {liveClass.instructor_last_name}
+                          </p>
+                        )}
+
+                        <div className="flex space-x-2">
+                          {isLive && liveClass.meeting_url && (
+                            <Button 
+                              size="sm" 
+                              className="bg-green-600 hover:bg-green-700"
+                              onClick={() => window.open(liveClass.meeting_url, '_blank')}
+                              data-testid={`button-join-live-${liveClass.id}`}
+                            >
+                              Join Live
+                            </Button>
+                          )}
+                          <Link href="/live-classes">
+                            <Button size="sm" variant="outline">
+                              View Details
+                            </Button>
+                          </Link>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         {/* Browse Courses Section */}
         <section>

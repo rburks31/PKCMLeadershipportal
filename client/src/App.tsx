@@ -10,6 +10,7 @@ import Home from "@/pages/home";
 import Course from "@/pages/course";
 import Lesson from "@/pages/lesson";
 import AdminPanel from "@/pages/admin";
+import LiveClasses from "@/pages/live-classes";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -23,6 +24,7 @@ function Router() {
           <Route path="/" component={Home} />
           <Route path="/courses/:courseId" component={Course} />
           <Route path="/lessons/:lessonId" component={Lesson} />
+          <Route path="/live-classes" component={LiveClasses} />
           <Route path="/admin" component={AdminPanel} />
         </>
       )}
