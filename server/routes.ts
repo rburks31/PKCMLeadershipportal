@@ -246,6 +246,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Create new user endpoint
+  app.post("/api/admin/users", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { email, firstName, lastName, role } = req.body;
+      
+      // Validate required fields
+      if (!email || !firstName || !lastName || !role) {
+        return res.status(400).json({ message: "All fields are required" });
+      }
+
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(400).json({ message: "User with this email already exists" });
+      }
+
+      // Create new user
+      const newUser = await storage.createUser({
+        email,
+        firstName,
+        lastName,
+        role,
+        isActive: true
+      });
+
+      res.status(201).json(newUser);
+    } catch (error) {
+      console.error("Error creating user:", error);
+      res.status(500).json({ message: "Failed to create user" });
+    }
+  });
+
   app.put("/api/admin/users/:id/role", isAuthenticated, isAdmin, async (req: any, res) => {
     try {
       const { role } = req.body;

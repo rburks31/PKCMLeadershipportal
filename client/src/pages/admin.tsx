@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
@@ -37,6 +38,21 @@ import { AdminTooltip } from "@/components/AdminTooltip";
 import { AdminOnboardingTour, OnboardingStarter } from "@/components/AdminOnboardingTour";
 import { AdminQuickActions } from "@/components/AdminQuickActions";
 import { AdminActivityFeed } from "@/components/AdminActivityFeed";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+
+// User creation form schema
+const createUserSchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  role: z.enum(["student", "instructor", "admin"], {
+    required_error: "Please select a role",
+  }),
+});
+
+type CreateUserFormData = z.infer<typeof createUserSchema>;
 
 interface User {
   id: string;
@@ -89,6 +105,7 @@ export default function AdminPanel() {
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [selectedModule, setSelectedModule] = useState<Module | null>(null);
   const [showOnboardingTour, setShowOnboardingTour] = useState(false);
+  const [showCreateUserDialog, setShowCreateUserDialog] = useState(false);
   const [isFirstTimeUser, setIsFirstTimeUser] = useState(true); // Temporarily true for testing
 
   // Redirect if not admin
@@ -155,7 +172,7 @@ export default function AdminPanel() {
   };
 
   const handleAddUser = () => {
-    toast({ title: "Add User", description: "User creation functionality will be available here" });
+    setShowCreateUserDialog(true);
   };
 
   const handleScheduleClass = () => {
@@ -172,6 +189,41 @@ export default function AdminPanel() {
 
   const handleManageSettings = () => {
     toast({ title: "Platform Settings", description: "Settings panel will be available here" });
+  };
+
+  // User creation form
+  const createUserForm = useForm<CreateUserFormData>({
+    resolver: zodResolver(createUserSchema),
+    defaultValues: {
+      email: "",
+      firstName: "",
+      lastName: "",
+      role: "student",
+    },
+  });
+
+  // Create user mutation
+  const createUserMutation = useMutation({
+    mutationFn: async (data: CreateUserFormData) => {
+      await apiRequest("POST", "/api/admin/users", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      toast({ title: "Success", description: "User created successfully" });
+      setShowCreateUserDialog(false);
+      createUserForm.reset();
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Error", 
+        description: error.message || "Failed to create user", 
+        variant: "destructive" 
+      });
+    },
+  });
+
+  const handleCreateUser = (data: CreateUserFormData) => {
+    createUserMutation.mutate(data);
   };
 
   // Mutations
@@ -608,6 +660,117 @@ export default function AdminPanel() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Create User Dialog */}
+        <Dialog open={showCreateUserDialog} onOpenChange={setShowCreateUserDialog}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Create New User</DialogTitle>
+              <DialogDescription>
+                Add a new user to the platform. They will receive an invitation to complete their profile.
+              </DialogDescription>
+            </DialogHeader>
+            <Form {...createUserForm}>
+              <form onSubmit={createUserForm.handleSubmit(handleCreateUser)} className="space-y-4">
+                <FormField
+                  control={createUserForm.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email Address</FormLabel>
+                      <FormControl>
+                        <Input 
+                          {...field} 
+                          type="email" 
+                          placeholder="user@example.com"
+                          data-testid="input-user-email"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={createUserForm.control}
+                  name="firstName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>First Name</FormLabel>
+                      <FormControl>
+                        <Input 
+                          {...field} 
+                          placeholder="John"
+                          data-testid="input-user-firstname"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={createUserForm.control}
+                  name="lastName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Last Name</FormLabel>
+                      <FormControl>
+                        <Input 
+                          {...field} 
+                          placeholder="Doe"
+                          data-testid="input-user-lastname"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={createUserForm.control}
+                  name="role"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Role</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-user-role">
+                            <SelectValue placeholder="Select a role" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="student">Student</SelectItem>
+                          <SelectItem value="instructor">Instructor</SelectItem>
+                          <SelectItem value="admin">Admin</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <DialogFooter>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => setShowCreateUserDialog(false)}
+                    data-testid="button-cancel-user"
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    disabled={createUserMutation.isPending}
+                    data-testid="button-create-user"
+                  >
+                    {createUserMutation.isPending ? "Creating..." : "Create User"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );
