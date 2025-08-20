@@ -25,7 +25,9 @@ import {
 import { db } from "./db";
 import { 
   users, 
-  courses, 
+  courses,
+  modules,
+  lessons,
   enrollments, 
   lessonProgress, 
   discussions, 
