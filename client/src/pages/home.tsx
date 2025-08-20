@@ -25,7 +25,7 @@ export default function Home() {
             Welcome to PKCM Leadership and Ministry Class
           </h1>
           <p className="text-pastoral-gray">
-            Continue your leadership journey and transform your ministry through biblical training.
+            Continue growing in discipleship and leadership, empowering you to multiply kingdom impact in your community.
           </p>
         </div>
 

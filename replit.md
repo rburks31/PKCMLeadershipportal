@@ -2,7 +2,7 @@
 
 ## Overview
 
-PKCM Leadership and Ministry Class (Promise Kingdom Community Ministries) is a comprehensive learning management system designed for pastoral and ministry leadership training. The platform provides a complete educational experience with courses, modules, lessons, video content, quizzes, discussion forums, and certificate generation. The system supports both instructors and students with features for content delivery, progress tracking, and community engagement.
+PKCM Leadership and Ministry Class (Promise Kingdom Community Ministries) is a comprehensive learning management system designed for discipleship and leadership training, empowering every follower of Jesus to grow in faith, live out biblical truth, and multiply kingdom impact. The platform provides a complete educational experience with courses, modules, lessons, video content, quizzes, discussion forums, and certificate generation. The system supports both instructors and students with features for content delivery, progress tracking, and community engagement.
 
 ## User Preferences
 

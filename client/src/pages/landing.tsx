@@ -33,8 +33,7 @@ export default function Landing() {
               Equip Leaders. Transform Lives.
             </h1>
             <p className="text-xl md:text-2xl mb-8 opacity-90 max-w-3xl mx-auto">
-              Comprehensive leadership and ministry training for pastors and ministry leaders at Promise Kingdom Community Ministries, 
-              designed to build strong, biblical foundations for kingdom impact.
+              Comprehensive training in discipleship and leadership at Promise Kingdom Community Ministries, empowering every follower of Jesus to grow in faith, live out biblical truth, and multiply kingdom impact in their communities.
             </p>
             <Button 
               size="lg" 
