@@ -89,13 +89,24 @@ export function AdminOnboardingTour({ isOpen, onClose }: AdminOnboardingTourProp
   const [isRunning, setIsRunning] = useState(false);
 
   useEffect(() => {
+    console.log("AdminOnboardingTour isOpen changed:", isOpen);
     setIsRunning(isOpen);
+    
+    // Debug: Check if target elements exist
+    if (isOpen) {
+      tourSteps.forEach((step, index) => {
+        const element = document.querySelector(step.target as string);
+        console.log(`Tour step ${index} target "${step.target}" found:`, !!element);
+      });
+    }
   }, [isOpen]);
 
   const handleJoyrideCallback = async (data: CallBackProps) => {
     const { status, type, index } = data;
+    console.log("Joyride callback:", data);
     
     if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {
+      console.log("Tour finished or skipped");
       setIsRunning(false);
       onClose();
       
@@ -179,6 +190,11 @@ interface OnboardingStarterProps {
 }
 
 export function OnboardingStarter({ onStart }: OnboardingStarterProps) {
+  const handleStartTour = () => {
+    console.log("Start Tour button clicked!"); // Debug log
+    onStart();
+  };
+
   return (
     <div className="bg-gradient-to-r from-pastoral-blue/10 to-pastoral-green/10 p-4 rounded-lg border border-pastoral-blue/20 mb-6">
       <div className="flex items-center justify-between">
@@ -190,7 +206,7 @@ export function OnboardingStarter({ onStart }: OnboardingStarterProps) {
         </div>
         <div className="flex gap-2">
           <Button 
-            onClick={onStart} 
+            onClick={handleStartTour} 
             className="bg-pastoral-blue hover:bg-pastoral-blue/90"
             data-testid="button-start-tour"
           >

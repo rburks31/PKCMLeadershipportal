@@ -171,10 +171,7 @@ export default function AdminPanel() {
   // Mutations
   const updateUserRoleMutation = useMutation({
     mutationFn: async ({ userId, role }: { userId: string; role: string }) => {
-      await apiRequest(`/api/admin/users/${userId}/role`, {
-        method: "PUT",
-        body: JSON.stringify({ role }),
-      });
+      await apiRequest("PUT", `/api/admin/users/${userId}/role`, { role });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
@@ -187,10 +184,7 @@ export default function AdminPanel() {
 
   const createCourseMutation = useMutation({
     mutationFn: async (data: { title: string; description: string }) => {
-      await apiRequest("/api/admin/courses", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
+      await apiRequest("POST", "/api/admin/courses", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/courses"] });
@@ -203,7 +197,7 @@ export default function AdminPanel() {
 
   const deleteCourseMutation = useMutation({
     mutationFn: async (courseId: number) => {
-      await apiRequest(`/api/admin/courses/${courseId}`, { method: "DELETE" });
+      await apiRequest("DELETE", `/api/admin/courses/${courseId}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/courses"] });
@@ -216,10 +210,7 @@ export default function AdminPanel() {
 
   const respondToDiscussionMutation = useMutation({
     mutationFn: async ({ discussionId, content }: { discussionId: number; content: string }) => {
-      await apiRequest(`/api/admin/discussions/${discussionId}/respond`, {
-        method: "POST",
-        body: JSON.stringify({ content }),
-      });
+      await apiRequest("POST", `/api/admin/discussions/${discussionId}/respond`, { content });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/discussions"] });
@@ -267,7 +258,10 @@ export default function AdminPanel() {
           {/* Onboarding Starter for first-time users */}
           {isFirstTimeUser && (
             <div className="mt-6">
-              <OnboardingStarter onStart={() => setShowOnboardingTour(true)} />
+              <OnboardingStarter onStart={() => {
+                console.log("Starting onboarding tour...");
+                setShowOnboardingTour(true);
+              }} />
             </div>
           )}
         </div>
