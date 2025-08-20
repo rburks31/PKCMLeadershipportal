@@ -62,7 +62,9 @@ export default function AuthPage() {
 
   // Redirect if already authenticated
   if (user && !isLoading) {
-    return <Redirect to="/" />;
+    const redirectPath = localStorage.getItem('redirectAfterLogin') || '/';
+    localStorage.removeItem('redirectAfterLogin');
+    return <Redirect to={redirectPath} />;
   }
 
   const loginForm = useForm<LoginFormData>({
