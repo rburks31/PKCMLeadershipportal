@@ -2,6 +2,7 @@ import { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import logoImage from "@assets/SEVEN WEAPONS OF THE WEAPON_1755651386501.jpg";
 import { 
   Home, 
   BookOpen, 
@@ -43,8 +44,15 @@ export default function Layout({ children }: LayoutProps) {
               {/* Logo */}
               <div className="flex-shrink-0 flex items-center">
                 <Link href="/">
-                  <div className="text-xl font-bold text-pastoral-primary" data-testid="link-logo">
-                    PKCM Leadership
+                  <div className="flex items-center space-x-3" data-testid="link-logo">
+                    <img 
+                      src={logoImage} 
+                      alt="PKCM Logo" 
+                      className="h-10 w-auto"
+                    />
+                    <div className="text-xl font-bold text-pastoral-primary">
+                      PKCM Leadership
+                    </div>
                   </div>
                 </Link>
               </div>

@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import Layout from "@/components/Layout";
 import { useEffect } from "react";
+import logoImage from "@assets/SEVEN WEAPONS OF THE WEAPON_1755651386501.jpg";
 import { Link } from "wouter";
 
 interface User {
@@ -189,10 +190,19 @@ export default function AdminPanel() {
     <Layout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2" data-testid="text-admin-title">
-            Administration Portal
-          </h1>
-          <p className="text-pastoral-gray">
+          <div className="flex items-center justify-center mb-6">
+            <img 
+              src={logoImage} 
+              alt="PKCM Logo" 
+              className="h-12 w-auto mr-4"
+            />
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2" data-testid="text-admin-title">
+                Administration Portal
+              </h1>
+            </div>
+          </div>
+          <p className="text-pastoral-gray text-center">
             Manage courses, users, and monitor student activity for PKCM Leadership and Ministry Class
           </p>
         </div>

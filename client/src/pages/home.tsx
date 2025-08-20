@@ -6,6 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import Layout from "@/components/Layout";
 import { Play, Clock, BookOpen, Users, Award, Video, Calendar } from "lucide-react";
+import logoImage from "@assets/SEVEN WEAPONS OF THE WEAPON_1755651386501.jpg";
 
 export default function Home() {
   const { data: myCourses, isLoading: coursesLoading } = useQuery({
@@ -25,10 +26,19 @@ export default function Home() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome Section */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2" data-testid="text-welcome">
-            Welcome to PKCM Leadership and Ministry Class
-          </h1>
-          <p className="text-pastoral-gray">
+          <div className="flex items-center justify-center mb-6">
+            <img 
+              src={logoImage} 
+              alt="PKCM Logo" 
+              className="h-16 w-auto mr-4"
+            />
+            <div className="text-center">
+              <h1 className="text-3xl font-bold text-gray-900 mb-2" data-testid="text-welcome">
+                Welcome to PKCM Leadership and Ministry Class
+              </h1>
+            </div>
+          </div>
+          <p className="text-pastoral-gray text-center">
             Continue growing in discipleship and leadership, empowering you to multiply kingdom impact in your community.
           </p>
         </div>
