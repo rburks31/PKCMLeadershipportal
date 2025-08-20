@@ -38,6 +38,19 @@ export default function Home() {
               </h1>
             </div>
           </div>
+          
+          {/* Quick Admin Access */}
+          <div className="flex justify-center mb-4">
+            <Link href="/admin">
+              <Button 
+                variant="outline" 
+                className="bg-pastoral-blue text-white hover:bg-blue-600 border-pastoral-blue"
+                data-testid="button-admin-access"
+              >
+                Admin Dashboard
+              </Button>
+            </Link>
+          </div>
           <p className="text-pastoral-gray text-center">
             Continue growing in discipleship and leadership, empowering you to multiply kingdom impact in your community.
           </p>
