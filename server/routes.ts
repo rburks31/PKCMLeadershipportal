@@ -339,9 +339,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { modules: moduleData, ...courseFields } = req.body;
       
-      // Validate course data
-      const courseData = insertCourseSchema.parse(courseFields);
-      courseData.instructorId = req.adminUser.id;
+      // Get instructor ID from the authenticated user
+      const instructorId = req.adminUser?.id || req.user?.claims?.sub;
+      
+      console.log("Creating course - instructorId:", instructorId);
+      console.log("Request body:", JSON.stringify(req.body, null, 2));
+      console.log("Course fields:", courseFields);
+      
+      if (!instructorId) {
+        return res.status(400).json({ message: "Unable to identify instructor" });
+      }
+      
+      // Validate course data with instructor ID
+      const courseData = insertCourseSchema.parse({
+        ...courseFields,
+        instructorId
+      });
       
       // Create course
       const [newCourse] = await db.insert(courses).values(courseData).returning();
