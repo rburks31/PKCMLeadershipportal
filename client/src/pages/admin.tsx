@@ -226,6 +226,30 @@ export default function AdminPanel() {
     createUserMutation.mutate(data);
   };
 
+  // Delete user mutation
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      await apiRequest("DELETE", `/api/admin/users/${userId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      toast({ title: "Success", description: "User removed successfully" });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Error", 
+        description: error.message || "Failed to remove user", 
+        variant: "destructive" 
+      });
+    },
+  });
+
+  const handleDeleteUser = (userId: string, userName: string) => {
+    if (window.confirm(`Are you sure you want to remove ${userName}? This action cannot be undone.`)) {
+      deleteUserMutation.mutate(userId);
+    }
+  };
+
   // Mutations
   const updateUserRoleMutation = useMutation({
     mutationFn: async ({ userId, role }: { userId: string; role: string }) => {
@@ -592,10 +616,22 @@ export default function AdminPanel() {
                             {new Date(user.created_at).toLocaleDateString()}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <UserRoleDialog 
-                              user={user} 
-                              onUpdateRole={(role) => updateUserRoleMutation.mutate({ userId: user.id, role })} 
-                            />
+                            <div className="flex space-x-2 items-center">
+                              <UserRoleDialog 
+                                user={user} 
+                                onUpdateRole={(role) => updateUserRoleMutation.mutate({ userId: user.id, role })} 
+                              />
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteUser(user.id, `${user.firstName} ${user.lastName}`)}
+                                disabled={deleteUserMutation.isPending}
+                                className="text-red-600 hover:text-red-900 p-1"
+                                data-testid={`button-delete-user-${user.id}`}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </td>
                         </tr>
                       ))}

@@ -32,6 +32,7 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: any): Promise<User>;
+  deleteUser(id: string): Promise<void>;
   upsertUser(user: UpsertUser): Promise<User>;
   
   // Course operations
@@ -86,6 +87,11 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return user;
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    // Delete user - cascade deletes will handle related data
+    await db.delete(users).where(eq(users.id, id));
   }
 
   async upsertUser(userData: UpsertUser): Promise<User> {

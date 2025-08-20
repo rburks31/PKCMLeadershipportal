@@ -292,6 +292,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete user endpoint
+  app.delete("/api/admin/users/:userId", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { userId } = req.params;
+      
+      if (!userId) {
+        return res.status(400).json({ message: "User ID is required" });
+      }
+
+      // Check if user exists
+      const existingUser = await storage.getUser(userId);
+      if (!existingUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Delete user (this will also cascade delete related data like enrollments, progress, etc.)
+      await storage.deleteUser(userId);
+
+      res.status(200).json({ message: "User deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      res.status(500).json({ message: "Failed to delete user" });
+    }
+  });
+
   app.put("/api/admin/users/:id/role", isAuthenticated, isAdmin, async (req: any, res) => {
     try {
       const { role } = req.body;
