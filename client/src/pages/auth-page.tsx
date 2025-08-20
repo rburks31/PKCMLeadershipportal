@@ -65,7 +65,7 @@ export default function AuthPage() {
     if (user && !isLoading) {
       const redirectPath = localStorage.getItem('redirectAfterLogin') || '/';
       localStorage.removeItem('redirectAfterLogin');
-      window.location.href = redirectPath;
+      window.location.pathname = redirectPath;
     }
   }, [user, isLoading]);
 
@@ -119,7 +119,8 @@ export default function AuthPage() {
       setTimeout(() => {
         const redirectPath = localStorage.getItem('redirectAfterLogin') || '/';
         localStorage.removeItem('redirectAfterLogin');
-        window.location.href = redirectPath;
+        // Use relative path to avoid domain issues
+        window.location.pathname = redirectPath;
       }, 1000);
     },
     onError: (error: any) => {
