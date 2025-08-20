@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
-import { Redirect, useLocation } from "wouter";
+import { useLocation } from "wouter";
 
 const loginSchema = z.object({
   login: z.string().min(1, "Email or username is required"),
@@ -61,11 +61,13 @@ export default function AuthPage() {
   }, [location]);
 
   // Redirect if already authenticated
-  if (user && !isLoading) {
-    const redirectPath = localStorage.getItem('redirectAfterLogin') || '/';
-    localStorage.removeItem('redirectAfterLogin');
-    return <Redirect to={redirectPath} />;
-  }
+  useEffect(() => {
+    if (user && !isLoading) {
+      const redirectPath = localStorage.getItem('redirectAfterLogin') || '/';
+      localStorage.removeItem('redirectAfterLogin');
+      window.location.href = redirectPath;
+    }
+  }, [user, isLoading]);
 
   const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -112,6 +114,13 @@ export default function AuthPage() {
         title: "Welcome back!",
         description: "You have successfully logged in.",
       });
+      
+      // Force redirect after successful login
+      setTimeout(() => {
+        const redirectPath = localStorage.getItem('redirectAfterLogin') || '/';
+        localStorage.removeItem('redirectAfterLogin');
+        window.location.href = redirectPath;
+      }, 1000);
     },
     onError: (error: any) => {
       toast({
