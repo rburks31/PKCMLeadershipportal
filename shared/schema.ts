@@ -196,8 +196,11 @@ export const discussionsRelations = relations(discussions, ({ one, many }) => ({
   parent: one(discussions, {
     fields: [discussions.parentId],
     references: [discussions.id],
+    relationName: "discussionParent"
   }),
-  replies: many(discussions),
+  replies: many(discussions, {
+    relationName: "discussionParent"
+  }),
 }));
 
 // Insert schemas
