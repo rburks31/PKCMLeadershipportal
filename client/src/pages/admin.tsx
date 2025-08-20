@@ -214,6 +214,19 @@ export default function AdminPanel() {
     },
   });
 
+  const togglePublishMutation = useMutation({
+    mutationFn: async ({ id, isPublished }: { id: number; isPublished: boolean }) => {
+      await apiRequest("PATCH", `/api/admin/courses/${id}/publish`, { isPublished });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/courses"] });
+      toast({ title: "Success", description: "Course status updated successfully" });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to update course status", variant: "destructive" });
+    },
+  });
+
   const respondToDiscussionMutation = useMutation({
     mutationFn: async ({ discussionId, content }: { discussionId: number; content: string }) => {
       await apiRequest("POST", `/api/admin/discussions/${discussionId}/respond`, { content });
@@ -435,6 +448,14 @@ export default function AdminPanel() {
                         <Badge variant={course.is_published ? "default" : "secondary"}>
                           {course.is_published ? "Published" : "Draft"}
                         </Badge>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => togglePublishMutation.mutate({ id: course.id, isPublished: !course.is_published })}
+                          data-testid={`button-toggle-publish-${course.id}`}
+                        >
+                          {course.is_published ? "Unpublish" : "Publish"}
+                        </Button>
                         <Button
                           variant="outline"
                           size="sm"

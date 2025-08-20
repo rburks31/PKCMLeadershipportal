@@ -445,6 +445,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch("/api/admin/courses/:id/publish", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const courseId = parseInt(req.params.id);
+      const { isPublished } = req.body;
+      
+      await db.update(courses)
+        .set({ isPublished })
+        .where(eq(courses.id, courseId));
+      
+      // Log the action
+      await db.insert(auditLogs).values({
+        userId: req.adminUser?.id || req.user?.claims?.sub,
+        action: isPublished ? "publish_course" : "unpublish_course",
+        resourceType: "course",
+        resourceId: courseId.toString(),
+        details: { isPublished },
+        ipAddress: req.ip,
+        userAgent: req.get("User-Agent")
+      });
+      
+      res.json({ message: `Course ${isPublished ? 'published' : 'unpublished'} successfully` });
+    } catch (error) {
+      console.error("Error updating course publish status:", error);
+      res.status(500).json({ message: "Failed to update course status" });
+    }
+  });
+
   // Student Progress Tracking
   app.get("/api/admin/progress", isAuthenticated, isAdmin, async (req, res) => {
     try {
