@@ -100,7 +100,7 @@ export function AdminOnboardingTour({ isOpen, onClose }: AdminOnboardingTourProp
       onClose();
       
       // Mark onboarding as completed
-      if (user && 'id' in user) {
+      if (user && (user as any).id) {
         try {
           await apiRequest("POST", "/api/admin/onboarding/complete", {
             step: "tour_completed"

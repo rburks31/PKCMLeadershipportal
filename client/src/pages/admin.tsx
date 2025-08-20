@@ -87,7 +87,7 @@ export default function AdminPanel() {
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [selectedModule, setSelectedModule] = useState<Module | null>(null);
   const [showOnboardingTour, setShowOnboardingTour] = useState(false);
-  const [isFirstTimeUser, setIsFirstTimeUser] = useState(false);
+  const [isFirstTimeUser, setIsFirstTimeUser] = useState(true); // Temporarily true for testing
 
   // Redirect if not admin
   useEffect(() => {
@@ -137,6 +137,9 @@ export default function AdminPanel() {
         step.step === 'tour_completed' && step.completed
       );
       setIsFirstTimeUser(!completedTour);
+    } else if (onboardingData && Array.isArray(onboardingData) && onboardingData.length === 0) {
+      // If no onboarding data exists, show tour for first time user
+      setIsFirstTimeUser(true);
     }
   }, [onboardingData]);
 
@@ -298,55 +301,21 @@ export default function AdminPanel() {
             {/* Quick Actions Section with enhanced admin features */}
             <div className="mb-8" data-testid="admin-quick-actions">
               <AdminQuickActions
-                actions={[
-                  {
-                    title: "Create Course",
-                    description: "Add a new course to the platform",
-                    icon: BookOpen,
-                    action: handleCreateCourse,
-                    color: "bg-blue-500"
-                  },
-                  {
-                    title: "Add User", 
-                    description: "Register a new student or instructor",
-                    icon: UserPlus,
-                    action: handleAddUser,
-                    color: "bg-green-500"
-                  },
-                  {
-                    title: "Schedule Live Class",
-                    description: "Set up a new live class session",
-                    icon: Video,
-                    action: handleScheduleClass,
-                    color: "bg-purple-500"
-                  },
-                  {
-                    title: "Send Announcement",
-                    description: "Broadcast message to all users",
-                    icon: Bell,
-                    action: handleSendAnnouncement,
-                    color: "bg-orange-500"
-                  },
-                  {
-                    title: "View Reports",
-                    description: "Access detailed analytics",
-                    icon: BarChart3,
-                    action: handleViewReports,
-                    color: "bg-indigo-500"
-                  },
-                  {
-                    title: "Platform Settings",
-                    description: "Configure system preferences",
-                    icon: Settings,
-                    action: handleManageSettings,
-                    color: "bg-gray-500"
-                  }
-                ]}
+                onCreateCourse={handleCreateCourse}
+                onAddUser={handleAddUser}
+                onScheduleClass={handleScheduleClass}
+                onSendAnnouncement={handleSendAnnouncement}
+                onViewReports={handleViewReports}
+                onManageSettings={handleManageSettings}
               />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <AdminTooltip content="Track the total number of registered users including students, instructors, and administrators">
+              <AdminTooltip 
+                title="Total Users" 
+                description="Track the total number of registered users including students, instructors, and administrators"
+                feature="total-users"
+              >
                 <Card data-testid="card-total-users">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Total Users</CardTitle>
@@ -359,7 +328,11 @@ export default function AdminPanel() {
                 </Card>
               </AdminTooltip>
               
-              <AdminTooltip content="Monitor all courses on the platform including published and draft courses">
+              <AdminTooltip 
+                title="Total Courses"
+                description="Monitor all courses on the platform including published and draft courses"
+                feature="total-courses"
+              >
                 <Card data-testid="card-total-courses">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Total Courses</CardTitle>
@@ -372,7 +345,11 @@ export default function AdminPanel() {
                 </Card>
               </AdminTooltip>
 
-              <AdminTooltip content="View recent discussion activity and student engagement">
+              <AdminTooltip 
+                title="Active Discussions"
+                description="View recent discussion activity and student engagement"
+                feature="active-discussions"
+              >
                 <Card data-testid="card-active-discussions">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Active Discussions</CardTitle>
@@ -385,7 +362,11 @@ export default function AdminPanel() {
                 </Card>
               </AdminTooltip>
 
-              <AdminTooltip content="Monitor overall course completion rates and student progress">
+              <AdminTooltip 
+                title="Completion Rate"
+                description="Monitor overall course completion rates and student progress"
+                feature="completion-rate"
+              >
                 <Card data-testid="card-completion-rate">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Completion Rate</CardTitle>
