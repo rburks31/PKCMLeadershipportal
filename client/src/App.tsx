@@ -11,14 +11,23 @@ import Course from "@/pages/course";
 import Lesson from "@/pages/lesson";
 import AdminPanel from "@/pages/admin";
 import LiveClasses from "@/pages/live-classes";
+import AuthPage from "@/pages/auth-page";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
 
   return (
     <Switch>
-      {isLoading || !isAuthenticated ? (
-        <Route path="/" component={Landing} />
+      {isLoading ? (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+        </div>
+      ) : !isAuthenticated ? (
+        <>
+          <Route path="/" component={Landing} />
+          <Route path="/auth" component={AuthPage} />
+          <Route component={Landing} />
+        </>
       ) : (
         <>
           <Route path="/" component={Home} />

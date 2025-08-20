@@ -20,7 +20,7 @@ export default function Landing() {
               <span className="text-xl font-bold text-gray-900">PKCM Leadership and Ministry Class</span>
             </div>
             <Button 
-              onClick={() => window.location.href = "/api/login"}
+              onClick={() => window.location.href = "/auth"}
               className="bg-pastoral-blue hover:bg-blue-600"
               data-testid="button-login"
             >
@@ -51,7 +51,7 @@ export default function Landing() {
             <Button 
               size="lg" 
               className="bg-pastoral-green hover:bg-green-600 text-lg px-8 py-4"
-              onClick={() => window.location.href = "/api/login"}
+              onClick={() => window.location.href = "/auth"}
               data-testid="button-get-started"
             >
               Get Started Today
@@ -144,7 +144,7 @@ export default function Landing() {
               </p>
               <Button 
                 className="bg-pastoral-blue hover:bg-blue-600"
-                onClick={() => window.location.href = "/api/login"}
+                onClick={() => window.location.href = "/auth"}
                 data-testid="button-preview-course"
               >
                 Preview Course
@@ -167,7 +167,7 @@ export default function Landing() {
           <Button 
             size="lg" 
             className="bg-white text-pastoral-blue hover:bg-gray-100 text-lg px-8 py-4"
-            onClick={() => window.location.href = "/api/login"}
+            onClick={() => window.location.href = "/auth"}
             data-testid="button-join-now"
           >
             Join Now - It's Free

@@ -28,11 +28,13 @@ import { db } from "./db";
 import { eq, and, desc, asc, sql } from "drizzle-orm";
 
 export interface IStorage {
-  // User operations (required for Replit Auth)
+  // User operations
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
+  getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: any): Promise<User>;
   deleteUser(id: string): Promise<void>;
+  updateLastLogin(id: string): Promise<void>;
   upsertUser(user: UpsertUser): Promise<User>;
   
   // Course operations
@@ -77,6 +79,11 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
+  }
+
   async createUser(userData: any): Promise<User> {
     const [user] = await db
       .insert(users)
@@ -92,6 +99,12 @@ export class DatabaseStorage implements IStorage {
   async deleteUser(id: string): Promise<void> {
     // Delete user - cascade deletes will handle related data
     await db.delete(users).where(eq(users.id, id));
+  }
+
+  async updateLastLogin(id: string): Promise<void> {
+    await db.update(users)
+      .set({ lastLoginAt: new Date() })
+      .where(eq(users.id, id));
   }
 
   async upsertUser(userData: UpsertUser): Promise<User> {

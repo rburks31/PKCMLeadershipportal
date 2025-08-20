@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupAuth, isAuthenticated } from "./auth";
 import { sendWelcomeEmail } from "./emailService";
 import { 
   insertCourseSchema, 
@@ -49,20 +49,8 @@ import {
 import { eq, desc, sql, count, avg, and, asc } from "drizzle-orm";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Auth middleware
-  await setupAuth(app);
-
-  // Auth routes
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      res.json(user);
-    } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
-    }
-  });
+  // Auth middleware - now using local auth instead of Replit auth
+  setupAuth(app);
 
   // Course routes
   app.get("/api/courses", async (req, res) => {
@@ -80,7 +68,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Enrollment routes
   app.post("/api/courses/:id/enroll", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const courseId = parseInt(req.params.id);
       
       const isEnrolled = await storage.isUserEnrolled(userId, courseId);
@@ -98,7 +86,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/my-courses", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const enrollments = await storage.getUserEnrollments(userId);
       res.json(enrollments);
     } catch (error) {
@@ -125,7 +113,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Progress routes
   app.get("/api/courses/:courseId/progress", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const courseId = parseInt(req.params.courseId);
       const progress = await storage.getCourseProgress(userId, courseId);
       res.json(progress);
@@ -137,7 +125,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/lessons/:lessonId/progress", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const lessonId = parseInt(req.params.lessonId);
       const { isCompleted, progressPercentage } = req.body;
       
@@ -170,7 +158,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/lessons/:lessonId/discussions", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const lessonId = parseInt(req.params.lessonId);
       
       const validatedData = insertDiscussionSchema.parse({
@@ -407,7 +395,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { modules: moduleData, ...courseFields } = req.body;
       
       // Get instructor ID from the authenticated user
-      const instructorId = req.adminUser?.id || req.user?.claims?.sub;
+      const instructorId = req.adminUser?.id || req.user?.id;
       
       console.log("Creating course - instructorId:", instructorId);
       console.log("Request body:", JSON.stringify(req.body, null, 2));
@@ -912,7 +900,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get upcoming live classes for user
   app.get("/api/live-classes/upcoming", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       
       const upcomingClasses = await db.execute(sql`
         SELECT 
@@ -958,7 +946,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const liveClassData = insertLiveClassSchema.parse(req.body);
-      liveClassData.instructorId = user.claims.sub;
+      liveClassData.instructorId = user.id;
 
       // Generate meeting URL based on platform
       let meetingUrl = "";
@@ -1018,7 +1006,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Register for a live class
   app.post("/api/live-classes/:id/register", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const liveClassId = parseInt(req.params.id);
 
       // Check if user is enrolled in the course
@@ -1062,7 +1050,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get live class details with meeting link
   app.get("/api/live-classes/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const liveClassId = parseInt(req.params.id);
 
       const liveClass = await db.query.liveClasses.findFirst({
@@ -1109,7 +1097,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update live class status (for instructors)
   app.put("/api/live-classes/:id/status", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const liveClassId = parseInt(req.params.id);
       const { status } = req.body;
 
@@ -1144,7 +1132,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Record attendance (when user joins)
   app.post("/api/live-classes/:id/join", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const liveClassId = parseInt(req.params.id);
 
       await db.update(liveClassAttendees)
