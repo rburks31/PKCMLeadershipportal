@@ -5,10 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import Layout from "@/components/Layout";
+import { useAuth } from "@/hooks/useAuth";
 import { Play, Clock, BookOpen, Users, Award, Video, Calendar } from "lucide-react";
 import logoImage from "@assets/SEVEN WEAPONS OF THE WEAPON_1755651386501.jpg";
 
 export default function Home() {
+  const { user } = useAuth();
+  const isAdmin = (user as any)?.role === 'admin';
+  
   const { data: myCourses, isLoading: coursesLoading } = useQuery({
     queryKey: ["/api/my-courses"],
   });
@@ -39,18 +43,20 @@ export default function Home() {
             </div>
           </div>
           
-          {/* Quick Admin Access */}
-          <div className="flex justify-center mb-4">
-            <Link href="/admin">
-              <Button 
-                variant="outline" 
-                className="bg-pastoral-blue text-white hover:bg-blue-600 border-pastoral-blue"
-                data-testid="button-admin-access"
-              >
-                Admin Dashboard
-              </Button>
-            </Link>
-          </div>
+          {/* Quick Admin Access - Only for Admins */}
+          {isAdmin && (
+            <div className="flex justify-center mb-4">
+              <Link href="/admin">
+                <Button 
+                  variant="outline" 
+                  className="bg-pastoral-blue text-white hover:bg-blue-600 border-pastoral-blue"
+                  data-testid="button-admin-access"
+                >
+                  Admin Dashboard
+                </Button>
+              </Link>
+            </div>
+          )}
           <p className="text-pastoral-gray text-center">
             Continue growing in discipleship and leadership, empowering you to multiply kingdom impact in your community.
           </p>
