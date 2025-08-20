@@ -239,7 +239,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // User Management
   app.get("/api/admin/users", isAuthenticated, isAdmin, async (req, res) => {
     try {
-      const userList = await db.select().from(users).orderBy(desc(users.createdAt));
+      const userList = await db.select({
+        id: users.id,
+        email: users.email,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        role: users.role,
+        createdAt: users.createdAt,
+        updatedAt: users.updatedAt
+      }).from(users).orderBy(desc(users.createdAt));
       res.json(userList);
     } catch (error) {
       console.error("Error fetching users:", error);

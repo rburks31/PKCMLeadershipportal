@@ -600,7 +600,7 @@ export default function AdminPanel() {
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div>
                               <div className="text-sm font-medium text-gray-900">
-                                {user.first_name} {user.last_name}
+                                {user.firstName || user.first_name} {user.lastName || user.last_name}
                               </div>
                             </div>
                           </td>
@@ -613,7 +613,9 @@ export default function AdminPanel() {
                             </Badge>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {new Date(user.created_at).toLocaleDateString()}
+                            {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 
+                             user.created_at ? new Date(user.created_at).toLocaleDateString() : 
+                             'N/A'}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <div className="flex space-x-2 items-center">
@@ -624,7 +626,7 @@ export default function AdminPanel() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => handleDeleteUser(user.id, `${user.firstName} ${user.lastName}`)}
+                                onClick={() => handleDeleteUser(user.id, `${user.firstName || user.first_name} ${user.lastName || user.last_name}`)}
                                 disabled={deleteUserMutation.isPending}
                                 className="text-red-600 hover:text-red-900 p-1"
                                 data-testid={`button-delete-user-${user.id}`}
