@@ -146,3 +146,83 @@ Equipping saints for the work of ministry
     text: textContent,
   });
 }
+
+export async function sendPasswordResetEmail(email: string, resetToken: string): Promise<boolean> {
+  const resetUrl = `${process.env.BASE_URL || 'http://localhost:5000'}/auth?reset=${resetToken}`;
+  
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px; }
+            .button { display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+            .footer { text-align: center; color: #666; margin-top: 30px; font-size: 14px; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>Password Reset Request</h1>
+                <p>PKCM Leadership and Ministry Class</p>
+            </div>
+            
+            <div class="content">
+                <h2>Reset Your Password</h2>
+                
+                <p>We received a request to reset your password for your PKCM Leadership and Ministry Class account.</p>
+                
+                <div style="text-align: center;">
+                    <a href="${resetUrl}" class="button">Reset Your Password</a>
+                </div>
+                
+                <p><strong>Important:</strong></p>
+                <ul>
+                    <li>This link will expire in 1 hour for security reasons</li>
+                    <li>If you didn't request this reset, please ignore this email</li>
+                    <li>Your password will remain unchanged unless you click the link above</li>
+                </ul>
+                
+                <p>If the button doesn't work, copy and paste this link into your browser:</p>
+                <p style="word-break: break-all; background: #eee; padding: 10px; border-radius: 4px;">
+                    <a href="${resetUrl}">${resetUrl}</a>
+                </p>
+            </div>
+            
+            <div class="footer">
+                <p>PKCM Leadership and Ministry Class<br>
+                This is an automated message, please do not reply.</p>
+            </div>
+        </div>
+    </body>
+    </html>
+  `;
+
+  const textContent = `
+Password Reset Request - PKCM Leadership and Ministry Class
+
+We received a request to reset your password for your PKCM Leadership and Ministry Class account.
+
+To reset your password, visit: ${resetUrl}
+
+Important:
+- This link will expire in 1 hour for security reasons
+- If you didn't request this reset, please ignore this email
+- Your password will remain unchanged unless you click the link above
+
+PKCM Leadership and Ministry Class
+This is an automated message, please do not reply.
+  `;
+
+  return await sendEmail({
+    to: email,
+    from: 'noreply@pkcm-learning.com',
+    subject: 'Reset Your Password - PKCM Leadership Class',
+    html: htmlContent,
+    text: textContent,
+  });
+}

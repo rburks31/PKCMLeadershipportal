@@ -36,6 +36,9 @@ export interface IStorage {
   deleteUser(id: string): Promise<void>;
   updateLastLogin(id: string): Promise<void>;
   upsertUser(user: UpsertUser): Promise<User>;
+  setPasswordResetToken(email: string, token: string, expires: Date): Promise<boolean>;
+  getUserByResetToken(token: string): Promise<User | undefined>;
+  clearPasswordResetToken(userId: string): Promise<void>;
   
   // Course operations
   getCourses(): Promise<Course[]>;
@@ -281,6 +284,47 @@ export class DatabaseStorage implements IStorage {
   async createDiscussion(discussion: InsertDiscussion): Promise<Discussion> {
     const [newDiscussion] = await db.insert(discussions).values(discussion).returning();
     return newDiscussion;
+  }
+
+  // Password reset operations
+  async setPasswordResetToken(email: string, token: string, expires: Date): Promise<boolean> {
+    try {
+      const result = await db
+        .update(users)
+        .set({
+          resetToken: token,
+          resetTokenExpires: expires,
+        })
+        .where(eq(users.email, email))
+        .returning();
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error setting password reset token:", error);
+      return false;
+    }
+  }
+
+  async getUserByResetToken(token: string): Promise<User | undefined> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(
+        and(
+          eq(users.resetToken, token),
+          sql`${users.resetTokenExpires} > NOW()`
+        )
+      );
+    return user;
+  }
+
+  async clearPasswordResetToken(userId: string): Promise<void> {
+    await db
+      .update(users)
+      .set({
+        resetToken: null,
+        resetTokenExpires: null,
+      })
+      .where(eq(users.id, userId));
   }
 }
 

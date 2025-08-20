@@ -37,6 +37,8 @@ export const users = pgTable("users", {
   role: varchar("role").default("student"), // student, instructor, admin
   isActive: boolean("is_active").default(true),
   lastLoginAt: timestamp("last_login_at"),
+  resetToken: varchar("reset_token"),
+  resetTokenExpires: timestamp("reset_token_expires"),
   preferences: jsonb("preferences"), // user settings and preferences
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

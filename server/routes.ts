@@ -2,7 +2,8 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./auth";
-import { sendWelcomeEmail } from "./emailService";
+import { sendWelcomeEmail, sendPasswordResetEmail } from "./emailService";
+import { randomBytes } from "crypto";
 import { 
   insertCourseSchema, 
   insertDiscussionSchema,
@@ -51,6 +52,73 @@ import { eq, desc, sql, count, avg, and, asc } from "drizzle-orm";
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware - now using local auth instead of Replit auth
   setupAuth(app);
+
+  // Password reset routes
+  app.post("/api/forgot-password", async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ message: "Email is required" });
+      }
+
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        // For security, return success even if user doesn't exist
+        return res.json({ message: "If the email exists, a reset link has been sent" });
+      }
+
+      // Generate reset token
+      const resetToken = randomBytes(32).toString('hex');
+      const resetTokenExpires = new Date(Date.now() + 3600000); // 1 hour from now
+
+      // Save reset token to database
+      await storage.setPasswordResetToken(email, resetToken, resetTokenExpires);
+
+      // Send reset email
+      await sendPasswordResetEmail(email, resetToken);
+
+      res.json({ message: "If the email exists, a reset link has been sent" });
+    } catch (error) {
+      console.error("Error in forgot password:", error);
+      res.status(500).json({ message: "Failed to process password reset request" });
+    }
+  });
+
+  app.post("/api/reset-password", async (req, res) => {
+    try {
+      const { token, newPassword } = req.body;
+      
+      if (!token || !newPassword) {
+        return res.status(400).json({ message: "Token and new password are required" });
+      }
+
+      if (newPassword.length < 6) {
+        return res.status(400).json({ message: "Password must be at least 6 characters long" });
+      }
+
+      const user = await storage.getUserByResetToken(token);
+      if (!user) {
+        return res.status(400).json({ message: "Invalid or expired reset token" });
+      }
+
+      // Update user's password
+      const bcrypt = require('bcrypt');
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      
+      await db.update(users)
+        .set({ password: hashedPassword })
+        .where(eq(users.id, user.id));
+
+      // Clear the reset token
+      await storage.clearPasswordResetToken(user.id);
+
+      res.json({ message: "Password has been reset successfully" });
+    } catch (error) {
+      console.error("Error in reset password:", error);
+      res.status(500).json({ message: "Failed to reset password" });
+    }
+  });
 
   // Course routes
   app.get("/api/courses", async (req, res) => {
