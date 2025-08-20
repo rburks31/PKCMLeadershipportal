@@ -45,7 +45,7 @@ import {
   adminActivities,
   adminOnboarding
 } from "@shared/schema";
-import { eq, desc, sql, count, avg, and } from "drizzle-orm";
+import { eq, desc, sql, count, avg, and, asc } from "drizzle-orm";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
@@ -465,22 +465,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const courseId = parseInt(req.params.id);
       
-      const course = await db.query.courses.findFirst({
-        where: eq(courses.id, courseId),
-        with: {
-          instructor: {
-            columns: { firstName: true, lastName: true, email: true }
-          },
-          modules: {
-            with: {
-              lessons: {
-                where: eq(lessons.isPublished, true) // Only show published lessons
-              }
-            },
-            orderBy: asc(modules.orderIndex)
-          }
-        }
-      });
+      // Get course with basic info first
+      const [course] = await db.select().from(courses).where(eq(courses.id, courseId));
       
       if (!course) {
         return res.status(404).json({ message: "Course not found" });
@@ -492,7 +478,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Course not found" });
       }
       
-      res.json(course);
+      // Get instructor info
+      const [instructor] = await db.select({
+        firstName: users.firstName,
+        lastName: users.lastName,
+        email: users.email
+      }).from(users).where(eq(users.id, course.instructorId));
+      
+      // Get modules with lessons
+      const courseModules = await db.select()
+        .from(modules)
+        .where(eq(modules.courseId, courseId))
+        .orderBy(asc(modules.orderIndex));
+      
+      // Get lessons for each module
+      const modulesWithLessons = await Promise.all(
+        courseModules.map(async (module) => {
+          const moduleLessons = await db.select()
+            .from(lessons)
+            .where(and(
+              eq(lessons.moduleId, module.id),
+              eq(lessons.isPublished, true)
+            ))
+            .orderBy(asc(lessons.orderIndex));
+          
+          return {
+            ...module,
+            lessons: moduleLessons
+          };
+        })
+      );
+      
+      const courseWithDetails = {
+        ...course,
+        instructor,
+        modules: modulesWithLessons
+      };
+      
+      res.json(courseWithDetails);
     } catch (error) {
       console.error("Error fetching course:", error);
       res.status(500).json({ message: "Failed to fetch course" });
