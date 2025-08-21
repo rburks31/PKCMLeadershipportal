@@ -79,7 +79,8 @@ export async function sendSMS(options: SMSOptions): Promise<SMSResponse> {
       };
     }
     
-    console.log(`Sending ${mediaUrl ? 'MMS' : 'SMS'} to ${formattedTo}: ${message}`);
+    console.log(`📱 Sending ${mediaUrl ? 'MMS' : 'SMS'} to ${formattedTo}: ${message}`);
+    console.log(`📞 From Twilio number: ${twilioPhoneNumber}`);
     
     const client = getTwilioClient();
     const messageData: any = {
@@ -96,6 +97,7 @@ export async function sendSMS(options: SMSOptions): Promise<SMSResponse> {
     const twilioMessage = await client.messages.create(messageData);
     
     console.log(`✅ ${mediaUrl ? 'MMS' : 'SMS'} sent successfully: ${twilioMessage.sid}`);
+    console.log(`📊 Message status: ${twilioMessage.status}, Price: ${twilioMessage.price}`);
     
     return {
       success: true,

@@ -104,16 +104,7 @@ export default function SMSManagement() {
     return hasPhone;
   });
   
-  // Debug logging
-  console.log('All users:', users.length);
-  console.log('Users with phones:', usersWithPhones.length);
-  console.log('Sample users:', users.slice(0, 3).map(u => ({ 
-    id: u.id, 
-    phone: u.phoneNumber, 
-    firstName: u.firstName, 
-    isActive: u.isActive,
-    hasPhone: u.phoneNumber && u.phoneNumber.toString().trim() !== '' 
-  })));
+  // Remove debug logging for production
 
   const handleSendIndividualSMS = (userId: string) => {
     if (!message.trim()) {
