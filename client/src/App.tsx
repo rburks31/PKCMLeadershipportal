@@ -14,6 +14,7 @@ import AdminPanel from "@/pages/admin";
 import SMSManagement from "@/pages/sms-management";
 import LiveClasses from "@/pages/live-classes";
 import AuthPage from "@/pages/auth-page";
+import Profile from "@/pages/profile";
 
 function ProtectedAdminRoute() {
   const { isAuthenticated, isLoading, user } = useAuth();
@@ -92,6 +93,7 @@ function Router() {
           <Route path="/courses/:courseId" component={Course} />
           <Route path="/lessons/:lessonId" component={Lesson} />
           <Route path="/live-classes" component={LiveClasses} />
+          <Route path="/profile" component={Profile} />
           <Route path="/admin" component={ProtectedAdminRoute} />
           <Route path="/admin/sms" component={SMSManagement} />
         </>

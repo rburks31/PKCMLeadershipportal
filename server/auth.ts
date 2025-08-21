@@ -188,7 +188,29 @@ export function setupAuth(app: Express) {
       username: req.user.username,
       firstName: req.user.firstName,
       lastName: req.user.lastName,
+      phoneNumber: req.user.phoneNumber,
       role: req.user.role
+    });
+  });
+
+  // Update user profile
+  app.put("/api/user/profile", (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.sendStatus(401);
+    }
+
+    const { firstName, lastName, phoneNumber } = req.body;
+    const userId = req.user.id;
+
+    storage.updateUserProfile(userId, {
+      firstName: firstName || null,
+      lastName: lastName || null,
+      phoneNumber: phoneNumber || null,
+    }).then((updatedUser) => {
+      res.json(updatedUser);
+    }).catch((error) => {
+      console.error("Error updating user profile:", error);
+      res.status(500).json({ message: "Failed to update profile" });
     });
   });
 }

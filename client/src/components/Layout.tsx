@@ -31,6 +31,7 @@ export default function Layout({ children }: LayoutProps) {
     { name: "Home", href: "/", icon: Home, current: location === "/" },
     { name: "Courses", href: "/courses", icon: BookOpen, current: location.startsWith("/courses") },
     { name: "Live Classes", href: "/live-classes", icon: Video, current: location === "/live-classes" },
+    { name: "Profile", href: "/profile", icon: User, current: location === "/profile" },
     ...(isAdmin ? [{ name: "Admin Portal", href: "/admin", icon: Shield, current: location === "/admin" }] : []),
   ];
 
@@ -82,17 +83,19 @@ export default function Layout({ children }: LayoutProps) {
 
             {/* User Menu */}
             <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <User className="w-4 h-4 text-gray-500" />
-                <span className="text-sm text-gray-700">
-                  {(user as any)?.firstName} {(user as any)?.lastName}
-                </span>
-                {isAdmin && (
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                    Admin
+              <Link href="/profile">
+                <div className="flex items-center space-x-2 hover:bg-gray-50 px-2 py-1 rounded cursor-pointer" data-testid="link-profile">
+                  <User className="w-4 h-4 text-gray-500" />
+                  <span className="text-sm text-gray-700">
+                    {(user as any)?.firstName || (user as any)?.username}
                   </span>
-                )}
-              </div>
+                  {isAdmin && (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                      Admin
+                    </span>
+                  )}
+                </div>
+              </Link>
               <Button
                 variant="ghost"
                 size="sm"
