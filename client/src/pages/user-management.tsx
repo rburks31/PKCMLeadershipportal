@@ -63,11 +63,16 @@ export default function UserManagement() {
     queryKey: ['/api/admin/users'],
     staleTime: 0,
     gcTime: 0, // Updated from cacheTime for TanStack Query v5
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
+
+  console.log("Raw users data from API:", users);
 
   // Keep local state in sync with query data
   useEffect(() => {
     if (users) {
+      console.log("Syncing users from query to local state:", users);
       setLocalUsers(users);
     }
   }, [users]);
@@ -272,6 +277,8 @@ export default function UserManagement() {
     }
   };
 
+  console.log("Current local users for rendering:", localUsers);
+  
   const filteredUsers = (localUsers as any[])?.filter((user: any) => {
     const matchesSearch = 
       (user.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -646,12 +653,18 @@ jane.smith@example.com,janesmith,Jane,Smith,+1-555-987-6543,instructor,password1
                                     </div>
                                     <div className="flex items-center gap-2 text-sm">
                                       <Phone className="h-4 w-4 text-gray-400" />
-                                      {user.phoneNumber || 'No phone'}
+                                      <span data-testid={`phone-display-${user.id}`}>
+                                        {user.phoneNumber || 'No phone'}
+                                      </span>
                                       {user.phoneNumber ? (
                                         <CheckCircle className="h-3 w-3 text-green-600" />
                                       ) : (
                                         <AlertCircle className="h-3 w-3 text-orange-600" />
                                       )}
+                                    </div>
+                                    {/* Debug info - remove later */}
+                                    <div className="text-xs text-gray-400">
+                                      Debug: {JSON.stringify({id: user.id, phone: user.phoneNumber})}
                                     </div>
                                   </div>
                                 )}
