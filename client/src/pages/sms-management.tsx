@@ -9,8 +9,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MessageSquare, Users, Send, CheckCircle, XCircle, MessageCircle } from 'lucide-react';
+import { MessageSquare, Users, Send, CheckCircle, XCircle, MessageCircle, ArrowLeft, ChevronRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Link } from 'wouter';
 
 interface User {
   id: string;
@@ -172,6 +173,25 @@ export default function SMSManagement() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
       <div className="max-w-6xl mx-auto">
+        {/* Navigation Breadcrumb */}
+        <div className="mb-6">
+          <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
+            <Link href="/admin" className="hover:text-blue-600 transition-colors">
+              Admin Dashboard
+            </Link>
+            <ChevronRight className="h-4 w-4" />
+            <span className="text-gray-900 font-medium">SMS/MMS Management</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <Link href="/admin">
+              <Button variant="outline" size="sm" data-testid="button-back-to-admin">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Admin
+              </Button>
+            </Link>
+          </div>
+        </div>
+
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
             <MessageCircle className="text-blue-600" />

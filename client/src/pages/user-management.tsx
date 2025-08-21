@@ -26,7 +26,9 @@ import {
   User,
   FileText,
   AlertCircle,
-  CheckCircle
+  CheckCircle,
+  ArrowLeft,
+  ChevronRight
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
@@ -34,6 +36,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import Layout from '@/components/Layout';
+import { Link } from 'wouter';
 
 const singleUserSchema = z.object({
   email: z.string().email('Valid email is required'),
@@ -320,6 +323,25 @@ jane.smith@example.com,janesmith,Jane,Smith,+1-555-987-6543,instructor,password1
     <Layout>
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
         <div className="max-w-7xl mx-auto">
+          {/* Navigation Breadcrumb */}
+          <div className="mb-6">
+            <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
+              <Link href="/admin" className="hover:text-blue-600 transition-colors">
+                Admin Dashboard
+              </Link>
+              <ChevronRight className="h-4 w-4" />
+              <span className="text-gray-900 font-medium">User Management</span>
+            </div>
+            <div className="flex items-center gap-4">
+              <Link href="/admin">
+                <Button variant="outline" size="sm" data-testid="button-back-to-admin">
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Admin
+                </Button>
+              </Link>
+            </div>
+          </div>
+
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
               <Users className="text-blue-600" />
