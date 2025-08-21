@@ -141,13 +141,16 @@ export default function UserManagement() {
     },
     onSuccess: (updatedUser, variables) => {
       console.log("Update successful:", updatedUser);
+      console.log("Updated user phone number:", updatedUser.phoneNumber);
       
       // Update local state immediately to show changes right away
-      setLocalUsers(prevUsers => 
-        prevUsers.map(user => 
-          user.id === updatedUser.id ? updatedUser : user
-        )
-      );
+      setLocalUsers(prevUsers => {
+        const newUsers = prevUsers.map(user => 
+          user.id === updatedUser.id ? { ...user, ...updatedUser } : user
+        );
+        console.log("New users array after update:", newUsers);
+        return newUsers;
+      });
       
       // Also refresh query data
       refetchUsers();
