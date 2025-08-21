@@ -58,8 +58,10 @@ export default function UserManagement() {
   const [editingUser, setEditingUser] = useState<any>(null);
   const [bulkText, setBulkText] = useState('');
 
-  const { data: users, isLoading } = useQuery({
+  const { data: users, isLoading, refetch: refetchUsers } = useQuery({
     queryKey: ['/api/admin/users'],
+    staleTime: 0,
+    cacheTime: 0,
   });
 
   const form = useForm<SingleUserFormData>({
@@ -129,13 +131,24 @@ export default function UserManagement() {
       }
       return response.json();
     },
-    onSuccess: (data, variables) => {
-      console.log("Update successful:", data);
+    onSuccess: (updatedUser, variables) => {
+      console.log("Update successful:", updatedUser);
+      
+      // Update the cache directly with the new user data
+      queryClient.setQueryData(['/api/admin/users'], (oldUsers: any[]) => {
+        if (!oldUsers) return oldUsers;
+        return oldUsers.map(user => 
+          user.id === updatedUser.id ? updatedUser : user
+        );
+      });
+      
       toast({
         title: "User Updated",
         description: "User information has been updated successfully",
       });
       setEditingUser(null);
+      
+      // Also invalidate to ensure fresh data on next load
       queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
     },
     onError: (error: any) => {
