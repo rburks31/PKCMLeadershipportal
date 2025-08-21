@@ -3,6 +3,17 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./auth";
 import { sendWelcomeEmail, sendPasswordResetEmail } from "./emailService";
+import { 
+  sendSMS, 
+  sendMMS, 
+  sendBulkSMS, 
+  sendWelcomeSMS, 
+  sendCourseEnrollmentSMS, 
+  sendLessonReminderSMS,
+  sendCertificateEarnedSMS,
+  sendLiveClassReminderSMS,
+  SMS_TEMPLATES 
+} from "./smsService";
 import { randomBytes } from "crypto";
 import { 
   insertCourseSchema, 
@@ -332,6 +343,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         email,
         firstName,
         lastName,
+        phoneNumber: req.body.phoneNumber || null, // Optional phone number for SMS
         role,
         isActive: true
       });
@@ -348,6 +360,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (emailError) {
         console.error('❌ Error sending welcome email:', emailError);
         // Don't fail user creation if email fails
+      }
+
+      // Send welcome SMS if phone number is provided
+      if (newUser.phoneNumber) {
+        try {
+          console.log(`About to send welcome SMS to newly created user: ${newUser.phoneNumber}`);
+          const smsResult = await sendWelcomeSMS(newUser.phoneNumber, `${firstName} ${lastName}`);
+          if (smsResult.success) {
+            console.log(`✅ Welcome SMS sent successfully to ${newUser.phoneNumber}`);
+          } else {
+            console.error(`❌ Failed to send welcome SMS to ${newUser.phoneNumber}: ${smsResult.error}`);
+          }
+        } catch (smsError) {
+          console.error('❌ Error sending welcome SMS:', smsError);
+          // Don't fail user creation if SMS fails
+        }
       }
 
       res.status(201).json(newUser);
@@ -1335,6 +1363,110 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error completing onboarding step:", error);
       res.status(500).json({ message: "Failed to complete onboarding step" });
+    }
+  });
+
+  // SMS/MMS Management Routes
+  
+  // Send SMS to individual user
+  app.post("/api/admin/sms/send", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { userId, message, mediaUrls } = req.body;
+      
+      if (!userId || !message) {
+        return res.status(400).json({ message: "User ID and message are required" });
+      }
+      
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      if (!user.phoneNumber) {
+        return res.status(400).json({ message: "User does not have a phone number" });
+      }
+      
+      const result = mediaUrls && mediaUrls.length > 0 
+        ? await sendMMS(user.phoneNumber, message, mediaUrls)
+        : await sendSMS({ to: user.phoneNumber, message });
+      
+      if (result.success) {
+        res.json({ success: true, messageId: result.messageId, message: `${mediaUrls ? 'MMS' : 'SMS'} sent successfully` });
+      } else {
+        res.status(500).json({ success: false, error: result.error });
+      }
+    } catch (error) {
+      console.error("Error sending SMS:", error);
+      res.status(500).json({ message: "Failed to send SMS" });
+    }
+  });
+
+  // Send bulk SMS to multiple users
+  app.post("/api/admin/sms/bulk", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { userIds, message, filterByRole } = req.body;
+      
+      if (!message) {
+        return res.status(400).json({ message: "Message is required" });
+      }
+      
+      let targetUsers: any[] = [];
+      
+      if (userIds && userIds.length > 0) {
+        // Send to specific users
+        for (const userId of userIds) {
+          const user = await storage.getUser(userId);
+          if (user && user.phoneNumber) {
+            targetUsers.push(user);
+          }
+        }
+      } else if (filterByRole) {
+        // Send to users by role
+        const allUsers = await storage.getAllUsers();
+        targetUsers = allUsers.filter(user => 
+          user.role === filterByRole && user.phoneNumber && user.isActive
+        );
+      } else {
+        // Send to all active users with phone numbers
+        const allUsers = await storage.getAllUsers();
+        targetUsers = allUsers.filter(user => user.phoneNumber && user.isActive);
+      }
+      
+      if (targetUsers.length === 0) {
+        return res.status(400).json({ message: "No users with phone numbers found" });
+      }
+      
+      const phoneNumbers = targetUsers.map(user => user.phoneNumber);
+      const results = await sendBulkSMS(phoneNumbers, message);
+      
+      const successCount = results.filter(r => r.success).length;
+      
+      res.json({
+        success: true,
+        message: `Sent SMS to ${successCount}/${targetUsers.length} users`,
+        results: results,
+        targetCount: targetUsers.length,
+        successCount: successCount
+      });
+    } catch (error) {
+      console.error("Error sending bulk SMS:", error);
+      res.status(500).json({ message: "Failed to send bulk SMS" });
+    }
+  });
+
+  // Get SMS templates
+  app.get("/api/admin/sms/templates", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const templates = Object.keys(SMS_TEMPLATES).map(key => ({
+        key,
+        name: key.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase()),
+        template: SMS_TEMPLATES[key as keyof typeof SMS_TEMPLATES]
+      }));
+      
+      res.json(templates);
+    } catch (error) {
+      console.error("Error fetching SMS templates:", error);
+      res.status(500).json({ message: "Failed to fetch SMS templates" });
     }
   });
 

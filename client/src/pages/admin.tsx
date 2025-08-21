@@ -405,6 +405,25 @@ export default function AdminPanel() {
               </div>
             </div>
 
+            {/* SMS Management Quick Access */}
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MessageCircle className="text-blue-600" />
+                  Communication Center
+                </CardTitle>
+                <CardDescription>Send SMS/MMS messages to students and instructors</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Link href="/admin/sms" className="w-full">
+                  <Button className="w-full" variant="outline" data-testid="link-sms-management">
+                    <MessageCircle className="mr-2 h-4 w-4" />
+                    SMS Management Portal
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <AdminTooltip 
                 title="Total Users" 

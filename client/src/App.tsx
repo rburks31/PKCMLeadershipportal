@@ -11,6 +11,7 @@ import Home from "@/pages/home";
 import Course from "@/pages/course";
 import Lesson from "@/pages/lesson";
 import AdminPanel from "@/pages/admin";
+import SMSManagement from "@/pages/sms-management";
 import LiveClasses from "@/pages/live-classes";
 import AuthPage from "@/pages/auth-page";
 
@@ -92,6 +93,7 @@ function Router() {
           <Route path="/lessons/:lessonId" component={Lesson} />
           <Route path="/live-classes" component={LiveClasses} />
           <Route path="/admin" component={ProtectedAdminRoute} />
+          <Route path="/admin/sms" component={SMSManagement} />
         </>
       )}
       <Route component={NotFound} />

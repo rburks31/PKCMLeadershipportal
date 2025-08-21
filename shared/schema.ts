@@ -33,6 +33,7 @@ export const users = pgTable("users", {
   password: varchar("password").notNull(),
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
+  phoneNumber: varchar("phone_number"), // for SMS/MMS notifications
   profileImageUrl: varchar("profile_image_url"),
   role: varchar("role").default("student"), // student, instructor, admin
   isActive: boolean("is_active").default(true),
