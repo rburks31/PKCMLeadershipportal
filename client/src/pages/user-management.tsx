@@ -121,10 +121,16 @@ export default function UserManagement() {
 
   const updateUserMutation = useMutation({
     mutationFn: async (data: { id: string; updates: Partial<SingleUserFormData> }) => {
+      console.log("Sending update request for user:", data.id, "with data:", data.updates);
       const response = await apiRequest('PUT', `/api/admin/users/${data.id}`, data.updates);
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Update failed: ${errorText}`);
+      }
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
+      console.log("Update successful:", data);
       toast({
         title: "User Updated",
         description: "User information has been updated successfully",
@@ -133,6 +139,7 @@ export default function UserManagement() {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
     },
     onError: (error: any) => {
+      console.error("Update failed:", error);
       toast({
         title: "Update Failed",
         description: error.message,
@@ -215,12 +222,22 @@ export default function UserManagement() {
   const handleSaveEdit = () => {
     if (!editingUser) return;
     
+    // Validate required fields
+    if (!editingUser.firstName?.trim() || !editingUser.lastName?.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "First name and last name are required",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     updateUserMutation.mutate({
       id: editingUser.id,
       updates: {
-        firstName: editingUser.firstName,
-        lastName: editingUser.lastName,
-        phoneNumber: editingUser.phoneNumber,
+        firstName: editingUser.firstName?.trim() || null,
+        lastName: editingUser.lastName?.trim() || null,
+        phoneNumber: editingUser.phoneNumber?.trim() || null,
         role: editingUser.role,
       },
     });
@@ -559,13 +576,13 @@ jane.smith@example.com,janesmith,Jane,Smith,+1-555-987-6543,instructor,password1
                                 {editingUser?.id === user.id ? (
                                   <div className="space-y-2">
                                     <Input
-                                      value={editingUser.firstName}
+                                      value={editingUser.firstName || ''}
                                       onChange={(e) => setEditingUser({...editingUser, firstName: e.target.value})}
                                       placeholder="First Name"
                                       data-testid={`input-edit-first-name-${user.id}`}
                                     />
                                     <Input
-                                      value={editingUser.lastName}
+                                      value={editingUser.lastName || ''}
                                       onChange={(e) => setEditingUser({...editingUser, lastName: e.target.value})}
                                       placeholder="Last Name"
                                       data-testid={`input-edit-last-name-${user.id}`}

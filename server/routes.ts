@@ -1610,20 +1610,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.params.id;
       const { firstName, lastName, phoneNumber, role } = req.body;
 
+      console.log("Updating user:", userId, "with data:", { firstName, lastName, phoneNumber, role });
+
+      // Update profile information
       const updatedUser = await storage.updateUserProfile(userId, {
-        firstName: firstName || null,
-        lastName: lastName || null,
-        phoneNumber: phoneNumber || null,
+        firstName: firstName?.trim() || null,
+        lastName: lastName?.trim() || null,
+        phoneNumber: phoneNumber?.trim() || null,
       });
 
-      // Update role if provided and different
-      if (role) {
-        await db.update(users)
+      // Update role if provided
+      if (role && role !== updatedUser.role) {
+        const [userWithRole] = await db.update(users)
           .set({ role, updatedAt: new Date() })
-          .where(eq(users.id, userId));
+          .where(eq(users.id, userId))
+          .returning();
+        
+        console.log("Updated user with role:", userWithRole);
+        res.json({ ...updatedUser, role: userWithRole.role });
+      } else {
+        console.log("Updated user profile:", updatedUser);
+        res.json(updatedUser);
       }
-
-      res.json(updatedUser);
     } catch (error: any) {
       console.error("Error updating user:", error);
       res.status(500).json({ message: "Failed to update user" });
