@@ -36,6 +36,7 @@ import {
   type LiveClassAttendee
 } from "@shared/schema";
 import { db } from "./db";
+import { eq } from "drizzle-orm";
 import { 
   users, 
   courses,
@@ -1467,6 +1468,187 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching SMS templates:", error);
       res.status(500).json({ message: "Failed to fetch SMS templates" });
+    }
+  });
+
+  // Admin user management routes
+  app.post("/api/admin/users", isAuthenticated, async (req: any, res) => {
+    try {
+      // Check if user is admin
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const { email, username, firstName, lastName, phoneNumber, role, password } = req.body;
+      
+      if (!email || !username || !password) {
+        return res.status(400).json({ message: "Email, username, and password are required" });
+      }
+
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(400).json({ message: "User with this email already exists" });
+      }
+
+      const existingUsername = await storage.getUserByUsername(username);
+      if (existingUsername) {
+        return res.status(400).json({ message: "Username already exists" });
+      }
+
+      // Hash password
+      const bcrypt = require('bcrypt');
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      const newUser = await storage.createUser({
+        email,
+        username,
+        firstName: firstName || null,
+        lastName: lastName || null,
+        phoneNumber: phoneNumber || null,
+        role: role || 'student',
+        password: hashedPassword,
+      });
+
+      // Send welcome SMS if phone number provided
+      if (phoneNumber) {
+        try {
+          await sendWelcomeSMS(phoneNumber, firstName || username);
+        } catch (smsError) {
+          console.error("Failed to send welcome SMS:", smsError);
+          // Don't fail the user creation if SMS fails
+        }
+      }
+
+      res.json(newUser);
+    } catch (error: any) {
+      console.error("Error creating user:", error);
+      res.status(500).json({ message: "Failed to create user" });
+    }
+  });
+
+  app.post("/api/admin/users/bulk", isAuthenticated, async (req: any, res) => {
+    try {
+      // Check if user is admin
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const { users: usersData } = req.body;
+      
+      if (!Array.isArray(usersData) || usersData.length === 0) {
+        return res.status(400).json({ message: "Users array is required" });
+      }
+
+      let created = 0;
+      let errors = 0;
+      const errorMessages = [];
+
+      for (const userData of usersData) {
+        try {
+          const { email, username, firstName, lastName, phoneNumber, role, password } = userData;
+          
+          // Check if user already exists
+          const existingUser = await storage.getUserByEmail(email);
+          if (existingUser) {
+            errors++;
+            errorMessages.push(`${email}: User already exists`);
+            continue;
+          }
+
+          const existingUsername = await storage.getUserByUsername(username);
+          if (existingUsername) {
+            errors++;
+            errorMessages.push(`${username}: Username already exists`);
+            continue;
+          }
+
+          // Hash password
+          const bcrypt = require('bcrypt');
+          const hashedPassword = await bcrypt.hash(password || 'defaultPassword123', 10);
+
+          await storage.createUser({
+            email,
+            username,
+            firstName: firstName || null,
+            lastName: lastName || null,
+            phoneNumber: phoneNumber || null,
+            role: role || 'student',
+            password: hashedPassword,
+          });
+
+          // Send welcome SMS if phone number provided
+          if (phoneNumber) {
+            try {
+              await sendWelcomeSMS(phoneNumber, firstName || username);
+            } catch (smsError) {
+              console.error("Failed to send welcome SMS:", smsError);
+            }
+          }
+
+          created++;
+        } catch (error: any) {
+          errors++;
+          errorMessages.push(`${userData.email}: ${error.message}`);
+        }
+      }
+
+      res.json({ created, errors, errorMessages });
+    } catch (error: any) {
+      console.error("Error in bulk user creation:", error);
+      res.status(500).json({ message: "Failed to create users" });
+    }
+  });
+
+  app.put("/api/admin/users/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      // Check if user is admin
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const userId = req.params.id;
+      const { firstName, lastName, phoneNumber, role } = req.body;
+
+      const updatedUser = await storage.updateUserProfile(userId, {
+        firstName: firstName || null,
+        lastName: lastName || null,
+        phoneNumber: phoneNumber || null,
+      });
+
+      // Update role if provided and different
+      if (role) {
+        await db.update(users)
+          .set({ role, updatedAt: new Date() })
+          .where(eq(users.id, userId));
+      }
+
+      res.json(updatedUser);
+    } catch (error: any) {
+      console.error("Error updating user:", error);
+      res.status(500).json({ message: "Failed to update user" });
+    }
+  });
+
+  app.delete("/api/admin/users/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      // Check if user is admin
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const userId = req.params.id;
+
+      // Don't allow deletion of own account
+      if (userId === req.user.id) {
+        return res.status(400).json({ message: "Cannot delete your own account" });
+      }
+
+      await storage.deleteUser(userId);
+      res.json({ message: "User deleted successfully" });
+    } catch (error: any) {
+      console.error("Error deleting user:", error);
+      res.status(500).json({ message: "Failed to delete user" });
     }
   });
 

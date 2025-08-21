@@ -40,6 +40,7 @@ export interface IStorage {
   setPasswordResetToken(email: string, token: string, expires: Date): Promise<boolean>;
   getUserByResetToken(token: string): Promise<User | undefined>;
   clearPasswordResetToken(userId: string): Promise<void>;
+  getAllUsers(): Promise<User[]>;
   
   // Course operations
   getCourses(): Promise<Course[]>;
@@ -137,6 +138,10 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, userId))
       .returning();
     return user;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users).orderBy(asc(users.createdAt));
   }
 
   // Course operations

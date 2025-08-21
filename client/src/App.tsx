@@ -15,6 +15,7 @@ import SMSManagement from "@/pages/sms-management";
 import LiveClasses from "@/pages/live-classes";
 import AuthPage from "@/pages/auth-page";
 import Profile from "@/pages/profile";
+import UserManagement from "@/pages/user-management";
 
 function ProtectedAdminRoute() {
   const { isAuthenticated, isLoading, user } = useAuth();
@@ -96,6 +97,7 @@ function Router() {
           <Route path="/profile" component={Profile} />
           <Route path="/admin" component={ProtectedAdminRoute} />
           <Route path="/admin/sms" component={SMSManagement} />
+          <Route path="/admin/users" component={UserManagement} />
         </>
       )}
       <Route component={NotFound} />
