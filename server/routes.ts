@@ -312,6 +312,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         email: users.email,
         firstName: users.firstName,
         lastName: users.lastName,
+        phoneNumber: users.phoneNumber,  // Added missing phoneNumber field
         role: users.role,
         createdAt: users.createdAt,
         updatedAt: users.updatedAt

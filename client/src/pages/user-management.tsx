@@ -67,12 +67,12 @@ export default function UserManagement() {
     refetchOnMount: true,
   });
 
-  console.log("Raw users data from API:", users);
+
 
   // Keep local state in sync with query data
   useEffect(() => {
     if (users) {
-      console.log("Syncing users from query to local state:", users);
+
       setLocalUsers(users);
     }
   }, [users]);
@@ -277,7 +277,7 @@ export default function UserManagement() {
     }
   };
 
-  console.log("Current local users for rendering:", localUsers);
+
   
   const filteredUsers = (localUsers as any[])?.filter((user: any) => {
     const matchesSearch = 
@@ -662,10 +662,7 @@ jane.smith@example.com,janesmith,Jane,Smith,+1-555-987-6543,instructor,password1
                                         <AlertCircle className="h-3 w-3 text-orange-600" />
                                       )}
                                     </div>
-                                    {/* Debug info - remove later */}
-                                    <div className="text-xs text-gray-400">
-                                      Debug: {JSON.stringify({id: user.id, phone: user.phoneNumber})}
-                                    </div>
+
                                   </div>
                                 )}
                               </TableCell>
