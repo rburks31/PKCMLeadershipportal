@@ -17,25 +17,39 @@ interface EmailParams {
 
 export async function sendEmail(params: EmailParams): Promise<boolean> {
   try {
-    await mailService.send({
+    const emailData: any = {
       to: params.to,
       from: params.from,
       subject: params.subject,
-      text: params.text,
-      html: params.html,
-    });
+    };
+    
+    if (params.text) emailData.text = params.text;
+    if (params.html) emailData.html = params.html;
+    
+    console.log(`Sending email via SendGrid from ${params.from} to ${params.to} with subject: ${params.subject}`);
+    
+    await mailService.send(emailData);
+    console.log(`✅ Email sent successfully to ${params.to}`);
     return true;
-  } catch (error) {
-    console.error('SendGrid email error:', error);
+  } catch (error: any) {
+    console.error('❌ SendGrid email error details:', {
+      message: error.message,
+      code: error.code,
+      response: error.response?.body || error.response
+    });
     return false;
   }
 }
 
 export async function sendWelcomeEmail(userEmail: string, userName: string, userRole: string): Promise<boolean> {
+  console.log(`Starting to send welcome email to: ${userEmail}, name: ${userName}, role: ${userRole}`);
+  
   const domains = process.env.REPLIT_DOMAINS;
   const loginUrl = domains 
     ? `https://${domains.split(',')[0]}/api/login`
     : 'https://your-platform.replit.app/api/login';
+
+  console.log(`Login URL: ${loginUrl}, REPLIT_DOMAINS: ${domains}`);
 
   const subject = "Welcome to PKCM Leadership and Ministry Class";
   
@@ -138,13 +152,18 @@ Promise Kingdom Community Ministries
 Equipping saints for the work of ministry
   `;
 
-  return await sendEmail({
+  console.log(`Attempting to send email with from: noreply@pkcm-learning.com, to: ${userEmail}`);
+  
+  const result = await sendEmail({
     to: userEmail,
     from: 'noreply@pkcm-learning.com', // You can customize this sender email
     subject,
     html: htmlContent,
     text: textContent,
   });
+  
+  console.log(`Email send result: ${result ? 'SUCCESS' : 'FAILED'}`);
+  return result;
 }
 
 export async function sendPasswordResetEmail(email: string, resetToken: string): Promise<boolean> {

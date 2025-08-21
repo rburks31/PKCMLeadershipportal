@@ -337,15 +337,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // Send welcome email
+      console.log(`About to send welcome email to newly created user: ${email}, name: ${firstName} ${lastName}, role: ${role}`);
       try {
         const emailSent = await sendWelcomeEmail(email, `${firstName} ${lastName}`, role);
         if (emailSent) {
-          console.log(`Welcome email sent successfully to ${email}`);
+          console.log(`✅ Welcome email sent successfully to ${email}`);
         } else {
-          console.error(`Failed to send welcome email to ${email}`);
+          console.error(`❌ Failed to send welcome email to ${email}`);
         }
       } catch (emailError) {
-        console.error('Error sending welcome email:', emailError);
+        console.error('❌ Error sending welcome email:', emailError);
         // Don't fail user creation if email fails
       }
 
