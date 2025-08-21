@@ -95,7 +95,18 @@ export default function SMSManagement() {
   });
 
   // Filter users with phone numbers
-  const usersWithPhones = users.filter(user => user.phoneNumber && user.isActive);
+  const usersWithPhones = users.filter(user => {
+    const hasPhone = user.phoneNumber && 
+                     user.phoneNumber.toString().trim() !== '' && 
+                     user.phoneNumber.toString().trim() !== 'null' && 
+                     user.phoneNumber.toString().trim() !== 'undefined';
+    return hasPhone && user.isActive;
+  });
+  
+  // Debug logging
+  console.log('All users:', users.length);
+  console.log('Users with phones:', usersWithPhones.length);
+  console.log('Sample users:', users.slice(0, 3).map(u => ({ id: u.id, phone: u.phoneNumber, firstName: u.firstName })));
 
   const handleSendIndividualSMS = (userId: string) => {
     if (!message.trim()) {
@@ -351,7 +362,14 @@ export default function SMSManagement() {
                 <div className="space-y-2">
                   <Label>Select Users ({usersWithPhones.length} users with phone numbers)</Label>
                   <div className="max-h-96 overflow-y-auto border rounded-md p-4 space-y-2">
-                    {usersWithPhones.map((user) => (
+                    {usersWithPhones.length === 0 ? (
+                      <div className="text-center py-8 text-gray-500">
+                        <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p className="text-lg font-medium mb-2">No Users with Phone Numbers</p>
+                        <p className="text-sm">Add phone numbers to users in the User Management section to send SMS messages.</p>
+                      </div>
+                    ) : (
+                      usersWithPhones.map((user) => (
                       <div
                         key={user.id}
                         className="flex items-center justify-between p-3 border rounded-lg bg-white hover:bg-gray-50"
@@ -391,7 +409,8 @@ export default function SMSManagement() {
                           </Button>
                         </div>
                       </div>
-                    ))}
+                      ))
+                    )}
                   </div>
                 </div>
               </CardContent>
