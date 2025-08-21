@@ -100,13 +100,20 @@ export default function SMSManagement() {
                      user.phoneNumber.toString().trim() !== '' && 
                      user.phoneNumber.toString().trim() !== 'null' && 
                      user.phoneNumber.toString().trim() !== 'undefined';
-    return hasPhone && user.isActive;
+    // Temporarily remove isActive filter to debug the issue
+    return hasPhone;
   });
   
   // Debug logging
   console.log('All users:', users.length);
   console.log('Users with phones:', usersWithPhones.length);
-  console.log('Sample users:', users.slice(0, 3).map(u => ({ id: u.id, phone: u.phoneNumber, firstName: u.firstName })));
+  console.log('Sample users:', users.slice(0, 3).map(u => ({ 
+    id: u.id, 
+    phone: u.phoneNumber, 
+    firstName: u.firstName, 
+    isActive: u.isActive,
+    hasPhone: u.phoneNumber && u.phoneNumber.toString().trim() !== '' 
+  })));
 
   const handleSendIndividualSMS = (userId: string) => {
     if (!message.trim()) {
