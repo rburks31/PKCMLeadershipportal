@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '../lib/queryClient';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -57,12 +57,20 @@ export default function UserManagement() {
   const [selectedRole, setSelectedRole] = useState<string>('all');
   const [editingUser, setEditingUser] = useState<any>(null);
   const [bulkText, setBulkText] = useState('');
+  const [localUsers, setLocalUsers] = useState<any[]>([]);
 
   const { data: users, isLoading, refetch: refetchUsers } = useQuery({
     queryKey: ['/api/admin/users'],
     staleTime: 0,
-    cacheTime: 0,
+    gcTime: 0, // Updated from cacheTime for TanStack Query v5
   });
+
+  // Keep local state in sync with query data
+  useEffect(() => {
+    if (users) {
+      setLocalUsers(users);
+    }
+  }, [users]);
 
   const form = useForm<SingleUserFormData>({
     resolver: zodResolver(singleUserSchema),
@@ -134,22 +142,21 @@ export default function UserManagement() {
     onSuccess: (updatedUser, variables) => {
       console.log("Update successful:", updatedUser);
       
-      // Update the cache directly with the new user data
-      queryClient.setQueryData(['/api/admin/users'], (oldUsers: any[]) => {
-        if (!oldUsers) return oldUsers;
-        return oldUsers.map(user => 
+      // Update local state immediately to show changes right away
+      setLocalUsers(prevUsers => 
+        prevUsers.map(user => 
           user.id === updatedUser.id ? updatedUser : user
-        );
-      });
+        )
+      );
+      
+      // Also refresh query data
+      refetchUsers();
       
       toast({
-        title: "User Updated",
+        title: "User Updated", 
         description: "User information has been updated successfully",
       });
       setEditingUser(null);
-      
-      // Also invalidate to ensure fresh data on next load
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
     },
     onError: (error: any) => {
       console.error("Update failed:", error);
@@ -262,7 +269,7 @@ export default function UserManagement() {
     }
   };
 
-  const filteredUsers = (users as any[])?.filter((user: any) => {
+  const filteredUsers = (localUsers as any[])?.filter((user: any) => {
     const matchesSearch = 
       (user.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (user.username || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
