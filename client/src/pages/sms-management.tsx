@@ -32,7 +32,7 @@ export default function SMSManagement() {
   const { toast } = useToast();
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [message, setMessage] = useState('');
-  const [filterByRole, setFilterByRole] = useState('');
+  const [filterByRole, setFilterByRole] = useState('all');
 
   // Fetch all users
   const { data: users = [], isLoading: usersLoading } = useQuery<User[]>({
@@ -122,7 +122,7 @@ export default function SMSManagement() {
 
     if (selectedUsers.length > 0) {
       data.userIds = selectedUsers;
-    } else if (filterByRole) {
+    } else if (filterByRole && filterByRole !== 'all') {
       data.filterByRole = filterByRole;
     }
 
@@ -247,7 +247,7 @@ export default function SMSManagement() {
                         <SelectValue placeholder="All roles" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All roles</SelectItem>
+                        <SelectItem value="all">All roles</SelectItem>
                         <SelectItem value="student">Students only</SelectItem>
                         <SelectItem value="instructor">Instructors only</SelectItem>
                         <SelectItem value="admin">Admins only</SelectItem>
@@ -293,7 +293,7 @@ export default function SMSManagement() {
                   ) : (
                     <>
                       <Send className="mr-2 h-4 w-4" />
-                      Send SMS to {selectedUsers.length > 0 ? selectedUsers.length : filterByRole ? 'filtered' : 'all'} users
+                      Send SMS to {selectedUsers.length > 0 ? selectedUsers.length : filterByRole !== 'all' ? 'filtered' : 'all'} users
                     </>
                   )}
                 </Button>
