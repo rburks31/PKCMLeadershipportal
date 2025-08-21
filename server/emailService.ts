@@ -35,8 +35,15 @@ export async function sendEmail(params: EmailParams): Promise<boolean> {
     console.error('❌ SendGrid email error details:', {
       message: error.message,
       code: error.code,
-      response: error.response?.body || error.response
+      response: error.response?.body,
+      fullResponse: error.response,
+      stack: error.stack
     });
+    
+    // Log the full error details for troubleshooting
+    if (error.response?.body?.errors) {
+      console.error('SendGrid specific errors:', error.response.body.errors);
+    }
     return false;
   }
 }
@@ -152,11 +159,15 @@ Promise Kingdom Community Ministries
 Equipping saints for the work of ministry
   `;
 
-  console.log(`Attempting to send email with from: noreply@pkcm-learning.com, to: ${userEmail}`);
+  // Use a verified sender email - in SendGrid you need to verify the sender
+  // For development, we'll try using a generic email that might work
+  const senderEmail = process.env.SENDGRID_VERIFIED_SENDER || 'test@example.com';
+  
+  console.log(`Attempting to send email with from: ${senderEmail}, to: ${userEmail}`);
   
   const result = await sendEmail({
     to: userEmail,
-    from: 'noreply@pkcm-learning.com', // You can customize this sender email
+    from: senderEmail,
     subject,
     html: htmlContent,
     text: textContent,
@@ -237,9 +248,11 @@ PKCM Leadership and Ministry Class
 This is an automated message, please do not reply.
   `;
 
+  const senderEmail = process.env.SENDGRID_VERIFIED_SENDER || 'test@example.com';
+  
   return await sendEmail({
     to: email,
-    from: 'noreply@pkcm-learning.com',
+    from: senderEmail,
     subject: 'Reset Your Password - PKCM Leadership Class',
     html: htmlContent,
     text: textContent,
