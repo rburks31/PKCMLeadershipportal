@@ -251,10 +251,10 @@ export default function UserManagement() {
 
   const filteredUsers = (users as any[])?.filter((user: any) => {
     const matchesSearch = 
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (user.firstName && user.firstName.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (user.lastName && user.lastName.toLowerCase().includes(searchTerm.toLowerCase()));
+      (user.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (user.username || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (user.firstName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (user.lastName || '').toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesRole = selectedRole === 'all' || user.role === selectedRole;
     
