@@ -64,17 +64,17 @@ function Router() {
 
   // Handle redirect after login
   useEffect(() => {
-    if (isAuthenticated && user) {
+    if (isAuthenticated && user && !isLoading) {
       const redirectPath = localStorage.getItem('redirectAfterLogin');
       if (redirectPath) {
         localStorage.removeItem('redirectAfterLogin');
         navigate(redirectPath);
-      } else if ((user as any)?.role === 'admin' && location === '/') {
-        // Auto-redirect admins to admin panel from home
+      } else if ((user as any)?.role === 'admin' && (location === '/' || location === '/auth')) {
+        // Auto-redirect admins to admin panel from home or auth page
         navigate('/admin');
       }
     }
-  }, [isAuthenticated, user, navigate, location]);
+  }, [isAuthenticated, user, isLoading, navigate, location]);
 
   return (
     <Switch>

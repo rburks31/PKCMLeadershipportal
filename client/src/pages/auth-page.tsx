@@ -60,14 +60,8 @@ export default function AuthPage() {
     }
   }, [location]);
 
-  // Redirect if already authenticated
-  useEffect(() => {
-    if (user && !isLoading) {
-      const redirectPath = localStorage.getItem('redirectAfterLogin') || '/';
-      localStorage.removeItem('redirectAfterLogin');
-      window.location.pathname = redirectPath;
-    }
-  }, [user, isLoading]);
+  // This will be handled by the Router component in App.tsx
+  // No need for redirect logic here to avoid conflicts
 
   const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -114,14 +108,7 @@ export default function AuthPage() {
         title: "Welcome back!",
         description: "You have successfully logged in.",
       });
-      
-      // Force redirect after successful login
-      setTimeout(() => {
-        const redirectPath = localStorage.getItem('redirectAfterLogin') || '/';
-        localStorage.removeItem('redirectAfterLogin');
-        // Use relative path to avoid domain issues
-        window.location.pathname = redirectPath;
-      }, 1000);
+      // Redirect will be handled by the Router component in App.tsx
     },
     onError: (error: any) => {
       toast({
