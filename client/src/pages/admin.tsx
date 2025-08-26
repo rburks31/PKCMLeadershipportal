@@ -29,7 +29,11 @@ import {
   Bell,
   Video,
   ArrowLeft,
-  ArrowRight
+  ArrowRight,
+  Search,
+  Shield,
+  Database,
+  Server
 } from "lucide-react";
 import Layout from "@/components/Layout";
 import logoImage from "@assets/SEVEN WEAPONS OF THE WEAPON_1755651386501.jpg";
@@ -43,6 +47,10 @@ import { AnnouncementDialog } from "@/components/AnnouncementDialog";
 import { ReportsDialog } from "@/components/ReportsDialog";
 import { SettingsDialog } from "@/components/SettingsDialog";
 import { VideoIntegrationDialog } from "@/components/VideoIntegrationDialog";
+import { BulkOperationsDialog } from "@/components/BulkOperationsDialog";
+import { SystemHealthMonitor } from "@/components/SystemHealthMonitor";
+import { AuditTrailDialog } from "@/components/AuditTrailDialog";
+import { AdvancedSearchDialog } from "@/components/AdvancedSearchDialog";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -116,6 +124,10 @@ export default function AdminPanel() {
   const [showReportsDialog, setShowReportsDialog] = useState(false);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [showVideoIntegrationDialog, setShowVideoIntegrationDialog] = useState(false);
+  const [showBulkOperationsDialog, setShowBulkOperationsDialog] = useState(false);
+  const [showAuditTrailDialog, setShowAuditTrailDialog] = useState(false);
+  const [showAdvancedSearchDialog, setShowAdvancedSearchDialog] = useState(false);
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [isFirstTimeUser, setIsFirstTimeUser] = useState(true); // Temporarily true for testing
 
   // Redirect if not admin
@@ -525,6 +537,41 @@ export default function AdminPanel() {
 
             </div>
 
+            {/* Advanced Admin Features */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setShowAdvancedSearchDialog(true)} data-testid="card-advanced-search">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Advanced Search</CardTitle>
+                  <Search className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <p className="text-xs text-muted-foreground">Search across all platform content</p>
+                </CardContent>
+              </Card>
+
+              <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setShowBulkOperationsDialog(true)} data-testid="card-bulk-operations">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Bulk Operations</CardTitle>
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <p className="text-xs text-muted-foreground">Mass email, SMS, import/export</p>
+                </CardContent>
+              </Card>
+
+              <SystemHealthMonitor />
+
+              <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setShowAuditTrailDialog(true)} data-testid="card-audit-trail">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Audit Trail</CardTitle>
+                  <Shield className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <p className="text-xs text-muted-foreground">Track admin actions & security</p>
+                </CardContent>
+              </Card>
+            </div>
+
             {/* Recent Activity with AdminActivityFeed */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" data-testid="admin-activity-feed">
               <Card>
@@ -893,6 +940,32 @@ export default function AdminPanel() {
         <SettingsDialog
           open={showSettingsDialog}
           onOpenChange={setShowSettingsDialog}
+        />
+
+        {/* Video Integration Dialog */}
+        <VideoIntegrationDialog 
+          open={showVideoIntegrationDialog} 
+          onOpenChange={setShowVideoIntegrationDialog} 
+        />
+
+        {/* Bulk Operations Dialog */}
+        <BulkOperationsDialog 
+          open={showBulkOperationsDialog} 
+          onOpenChange={setShowBulkOperationsDialog} 
+          selectedUsers={selectedUsers}
+          users={users || []}
+        />
+
+        {/* Audit Trail Dialog */}
+        <AuditTrailDialog 
+          open={showAuditTrailDialog} 
+          onOpenChange={setShowAuditTrailDialog} 
+        />
+
+        {/* Advanced Search Dialog */}
+        <AdvancedSearchDialog 
+          open={showAdvancedSearchDialog} 
+          onOpenChange={setShowAdvancedSearchDialog} 
         />
       </div>
     </Layout>
