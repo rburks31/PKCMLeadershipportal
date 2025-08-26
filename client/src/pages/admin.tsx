@@ -39,6 +39,7 @@ import { AdminOnboardingTour, OnboardingStarter } from "@/components/AdminOnboar
 import { AdminQuickActions } from "@/components/AdminQuickActions";
 import { AdminActivityFeed } from "@/components/AdminActivityFeed";
 import { ScheduleLiveClassDialog } from "@/components/ScheduleLiveClassDialog";
+import { AnnouncementDialog } from "@/components/AnnouncementDialog";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -108,6 +109,7 @@ export default function AdminPanel() {
   const [showOnboardingTour, setShowOnboardingTour] = useState(false);
   const [showCreateUserDialog, setShowCreateUserDialog] = useState(false);
   const [showScheduleClassDialog, setShowScheduleClassDialog] = useState(false);
+  const [showAnnouncementDialog, setShowAnnouncementDialog] = useState(false);
   const [isFirstTimeUser, setIsFirstTimeUser] = useState(true); // Temporarily true for testing
 
   // Redirect if not admin
@@ -182,7 +184,7 @@ export default function AdminPanel() {
   };
 
   const handleSendAnnouncement = () => {
-    toast({ title: "Send Announcement", description: "Announcement system will be available here" });
+    setShowAnnouncementDialog(true);
   };
 
   const handleViewReports = () => {
@@ -867,6 +869,12 @@ export default function AdminPanel() {
         <ScheduleLiveClassDialog
           open={showScheduleClassDialog}
           onOpenChange={setShowScheduleClassDialog}
+        />
+
+        {/* Announcement Dialog */}
+        <AnnouncementDialog
+          open={showAnnouncementDialog}
+          onOpenChange={setShowAnnouncementDialog}
         />
       </div>
     </Layout>

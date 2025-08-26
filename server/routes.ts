@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./auth";
-import { sendWelcomeEmail, sendPasswordResetEmail } from "./emailService";
+import { sendWelcomeEmail, sendPasswordResetEmail, sendEmail } from "./emailService";
 import { 
   sendSMS, 
   sendMMS, 
@@ -323,6 +323,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const analytics = await db.execute(sql`
         SELECT 
           (SELECT COUNT(*) FROM ${users}) as total_users,
+          (SELECT COUNT(*) FROM ${users} WHERE role = 'student') as student_count,
+          (SELECT COUNT(*) FROM ${users} WHERE role = 'instructor') as instructor_count,
           (SELECT COUNT(*) FROM ${courses}) as total_courses,
           (SELECT COUNT(*) FROM ${enrollments}) as total_enrollments,
           (SELECT COUNT(*) FROM ${discussions}) as active_discussions,
@@ -851,28 +853,164 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/admin/announcements", isAuthenticated, isAdmin, async (req: any, res) => {
+  app.post("/api/admin/announcements", isAuthenticated, async (req: any, res) => {
     try {
-      const announcementData = insertAnnouncementSchema.parse(req.body);
-      announcementData.authorId = req.adminUser.id;
+      const user = req.user;
+      if (!user || user.role !== "admin") {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const { 
+        title, 
+        message, 
+        sendEmail, 
+        sendSMS, 
+        recipientType, 
+        courseId 
+      } = req.body;
+
+      // Validate required fields
+      if (!title || !message) {
+        return res.status(400).json({ message: "Title and message are required" });
+      }
+
+      if (!sendEmail && !sendSMS) {
+        return res.status(400).json({ message: "At least one communication method must be selected" });
+      }
+
+      // Get recipients based on type
+      let recipients: any[] = [];
       
-      const [newAnnouncement] = await db.insert(announcements).values(announcementData).returning();
-      
+      if (recipientType === "all") {
+        const allUsers = await db.select({
+          id: users.id,
+          email: users.email,
+          phoneNumber: users.phoneNumber,
+          firstName: users.firstName,
+          lastName: users.lastName,
+        }).from(users);
+        recipients = allUsers;
+      } else if (recipientType === "students") {
+        const students = await db.select({
+          id: users.id,
+          email: users.email,
+          phoneNumber: users.phoneNumber,
+          firstName: users.firstName,
+          lastName: users.lastName,
+        }).from(users).where(eq(users.role, "student"));
+        recipients = students;
+      } else if (recipientType === "instructors") {
+        const instructors = await db.select({
+          id: users.id,
+          email: users.email,
+          phoneNumber: users.phoneNumber,
+          firstName: users.firstName,
+          lastName: users.lastName,
+        }).from(users).where(eq(users.role, "instructor"));
+        recipients = instructors;
+      } else if (recipientType === "course" && courseId) {
+        const courseEnrollees = await db.execute(sql`
+          SELECT u.id, u.email, u.phone_number, u.first_name, u.last_name
+          FROM ${users} u
+          INNER JOIN ${enrollments} e ON u.id = e.user_id
+          WHERE e.course_id = ${courseId}
+        `);
+        recipients = courseEnrollees.rows;
+      }
+
+      if (recipients.length === 0) {
+        return res.status(400).json({ message: "No recipients found for the selected criteria" });
+      }
+
+      // Create announcement record
+      const [newAnnouncement] = await db.insert(announcements).values({
+        title,
+        content: message,
+        authorId: user.id,
+      }).returning();
+
+      let emailsSent = 0;
+      let smsSent = 0;
+
+      // Send emails if requested
+      if (sendEmail) {
+        for (const recipient of recipients) {
+          if (recipient.email) {
+            try {
+              await sendEmail({
+                to: recipient.email,
+                from: process.env.SENDGRID_VERIFIED_SENDER!,
+                subject: `PKCM Announcement: ${title}`,
+                html: `
+                  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px;">
+                      <h2 style="color: #333; margin-bottom: 20px;">PKCM Leadership and Ministry Class</h2>
+                      <h3 style="color: #2563eb; margin-bottom: 15px;">${title}</h3>
+                      <div style="background-color: white; padding: 20px; border-radius: 8px; border-left: 4px solid #2563eb;">
+                        <p style="color: #555; line-height: 1.6; margin: 0;">${message.replace(/\n/g, '<br>')}</p>
+                      </div>
+                      <p style="color: #666; font-size: 14px; margin-top: 20px;">
+                        Best regards,<br>
+                        PKCM Leadership Team
+                      </p>
+                    </div>
+                  </div>
+                `,
+                text: `PKCM Announcement: ${title}\n\n${message}\n\nBest regards,\nPKCM Leadership Team`
+              });
+              emailsSent++;
+            } catch (error) {
+              console.error(`Failed to send email to ${recipient.email}:`, error);
+            }
+          }
+        }
+      }
+
+      // Send SMS if requested
+      if (sendSMS) {
+        for (const recipient of recipients) {
+          if (recipient.phoneNumber || recipient.phone_number) {
+            const phone = recipient.phoneNumber || recipient.phone_number;
+            try {
+              await sendSMS(
+                phone,
+                `PKCM Announcement: ${title}\n\n${message}\n\n- PKCM Leadership Team`
+              );
+              smsSent++;
+            } catch (error) {
+              console.error(`Failed to send SMS to ${phone}:`, error);
+            }
+          }
+        }
+      }
+
       // Log the action
       await db.insert(auditLogs).values({
-        userId: req.adminUser.id,
-        action: "create_announcement",
+        userId: user.id,
+        action: "send_announcement",
         resourceType: "announcement",
         resourceId: newAnnouncement.id.toString(),
-        details: { title: newAnnouncement.title },
+        details: { 
+          title, 
+          recipientType, 
+          recipientCount: recipients.length,
+          emailsSent,
+          smsSent 
+        },
         ipAddress: req.ip,
         userAgent: req.get("User-Agent")
       });
 
-      res.status(201).json(newAnnouncement);
+      res.status(201).json({
+        announcement: newAnnouncement,
+        recipientCount: recipients.length,
+        emailsSent,
+        smsSent,
+        message: `Announcement sent successfully to ${recipients.length} recipients`
+      });
     } catch (error) {
-      console.error("Error creating announcement:", error);
-      res.status(500).json({ message: "Failed to create announcement" });
+      console.error("Error sending announcement:", error);
+      res.status(500).json({ message: "Failed to send announcement" });
     }
   });
 
