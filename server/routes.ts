@@ -36,7 +36,6 @@ import {
   type LiveClassAttendee
 } from "@shared/schema";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
 import { 
   users, 
   courses,

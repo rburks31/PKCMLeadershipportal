@@ -179,6 +179,19 @@ export function setupAuth(app: Express) {
 
   // Get current user endpoint
   app.get("/api/user", (req, res) => {
+    // In development mode, automatically provide admin access
+    if (process.env.NODE_ENV === 'development' && !req.isAuthenticated()) {
+      return res.json({
+        id: "dev-admin",
+        email: "admin@dev.local",
+        username: "dev-admin",
+        firstName: "Development",
+        lastName: "Admin",
+        phoneNumber: null,
+        role: "admin"
+      });
+    }
+    
     if (!req.isAuthenticated()) {
       return res.sendStatus(401);
     }
@@ -217,6 +230,24 @@ export function setupAuth(app: Express) {
 
 // Middleware to check if user is authenticated
 export const isAuthenticated = (req: any, res: any, next: any) => {
+  // In development mode, automatically provide admin access
+  if (process.env.NODE_ENV === 'development' && !req.isAuthenticated()) {
+    // Mock admin user for development
+    req.user = {
+      id: "dev-admin",
+      email: "admin@dev.local",
+      username: "dev-admin",
+      firstName: "Development",
+      lastName: "Admin",
+      phoneNumber: null,
+      role: "admin",
+      isActive: true,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    return next();
+  }
+  
   if (req.isAuthenticated()) {
     return next();
   }
