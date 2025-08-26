@@ -735,6 +735,18 @@ export default function AdminPanel() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Communication Testing */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Communication Testing</CardTitle>
+                <CardDescription>Test email and SMS functionality</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <TestEmailSection />
+                <TestSMSSection />
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
 
@@ -1265,5 +1277,173 @@ function RespondToDiscussionDialog({ discussionId, onRespond }: { discussionId: 
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+// Test Email Section Component
+function TestEmailSection() {
+  const [email, setEmail] = useState("");
+  const [subject, setSubject] = useState("Test Email from PKCM LMS");
+  const [message, setMessage] = useState("This is a test email to verify email functionality is working correctly.");
+  const { toast } = useToast();
+
+  const testEmailMutation = useMutation({
+    mutationFn: async (data: { email: string; subject: string; message: string }) => {
+      const response = await apiRequest("POST", "/api/admin/test-email", data);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Test email sent successfully!",
+      });
+      setEmail("");
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send test email",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSendTestEmail = () => {
+    if (!email.trim() || !subject.trim() || !message.trim()) {
+      toast({
+        title: "Error",
+        description: "Please fill in all email fields",
+        variant: "destructive",
+      });
+      return;
+    }
+    testEmailMutation.mutate({ email, subject, message });
+  };
+
+  return (
+    <div className="space-y-4">
+      <h3 className="text-lg font-medium">Test Email</h3>
+      <div className="grid grid-cols-1 gap-4">
+        <div>
+          <Label htmlFor="test-email">Email Address</Label>
+          <Input
+            id="test-email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="recipient@example.com"
+            data-testid="input-test-email"
+          />
+        </div>
+        <div>
+          <Label htmlFor="test-subject">Subject</Label>
+          <Input
+            id="test-subject"
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            placeholder="Email subject"
+            data-testid="input-test-subject"
+          />
+        </div>
+        <div>
+          <Label htmlFor="test-message">Message</Label>
+          <Textarea
+            id="test-message"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder="Email message content"
+            rows={3}
+            data-testid="textarea-test-message"
+          />
+        </div>
+        <Button 
+          onClick={handleSendTestEmail}
+          disabled={testEmailMutation.isPending}
+          data-testid="button-send-test-email"
+        >
+          {testEmailMutation.isPending ? "Sending..." : "Send Test Email"}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// Test SMS Section Component
+function TestSMSSection() {
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [message, setMessage] = useState("This is a test SMS from PKCM Leadership and Ministry Class to verify SMS functionality is working correctly.");
+  const { toast } = useToast();
+
+  const testSMSMutation = useMutation({
+    mutationFn: async (data: { phoneNumber: string; message: string }) => {
+      const response = await apiRequest("POST", "/api/admin/test-sms", data);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Test SMS sent successfully!",
+      });
+      setPhoneNumber("");
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send test SMS",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSendTestSMS = () => {
+    if (!phoneNumber.trim() || !message.trim()) {
+      toast({
+        title: "Error",
+        description: "Please fill in phone number and message",
+        variant: "destructive",
+      });
+      return;
+    }
+    testSMSMutation.mutate({ phoneNumber, message });
+  };
+
+  return (
+    <div className="space-y-4">
+      <h3 className="text-lg font-medium">Test SMS</h3>
+      <div className="grid grid-cols-1 gap-4">
+        <div>
+          <Label htmlFor="test-phone">Phone Number</Label>
+          <Input
+            id="test-phone"
+            type="tel"
+            value={phoneNumber}
+            onChange={(e) => setPhoneNumber(e.target.value)}
+            placeholder="+1234567890"
+            data-testid="input-test-phone"
+          />
+          <p className="text-sm text-gray-500 mt-1">
+            Include country code (e.g., +1 for US)
+          </p>
+        </div>
+        <div>
+          <Label htmlFor="test-sms-message">Message</Label>
+          <Textarea
+            id="test-sms-message"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder="SMS message content"
+            rows={3}
+            data-testid="textarea-test-sms-message"
+          />
+        </div>
+        <Button 
+          onClick={handleSendTestSMS}
+          disabled={testSMSMutation.isPending}
+          data-testid="button-send-test-sms"
+        >
+          {testSMSMutation.isPending ? "Sending..." : "Send Test SMS"}
+        </Button>
+      </div>
+    </div>
   );
 }

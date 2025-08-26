@@ -273,6 +273,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ==== ADMIN ROUTES ====
 
+  // Test Email endpoint
+  app.post("/api/admin/test-email", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { email, subject, message } = req.body;
+      
+      if (!email || !subject || !message) {
+        return res.status(400).json({ message: "Email, subject, and message are required" });
+      }
+
+      const emailSent = await sendWelcomeEmail(email, "Test User", "admin");
+      
+      if (emailSent) {
+        res.json({ message: "Test email sent successfully!" });
+      } else {
+        res.status(500).json({ message: "Failed to send test email" });
+      }
+    } catch (error) {
+      console.error("Error sending test email:", error);
+      res.status(500).json({ message: "Failed to send test email" });
+    }
+  });
+
+  // Test SMS endpoint
+  app.post("/api/admin/test-sms", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { phoneNumber, message } = req.body;
+      
+      if (!phoneNumber || !message) {
+        return res.status(400).json({ message: "Phone number and message are required" });
+      }
+
+      const smsResult = await sendSMS({ to: phoneNumber, message });
+      
+      if (smsResult.success) {
+        res.json({ message: "Test SMS sent successfully!" });
+      } else {
+        res.status(500).json({ message: `Failed to send test SMS: ${smsResult.error}` });
+      }
+    } catch (error) {
+      console.error("Error sending test SMS:", error);
+      res.status(500).json({ message: "Failed to send test SMS" });
+    }
+  });
+
   // Admin Dashboard Analytics
   app.get("/api/admin/analytics", isAuthenticated, isAdmin, async (req, res) => {
     try {
