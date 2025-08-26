@@ -1124,6 +1124,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Test email connection
+  app.post("/api/admin/test-email", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      if (!user || user.role !== "admin") {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const { to, subject, message } = req.body;
+      
+      const success = await sendEmail({
+        to: to || "admin@dev.local",
+        from: process.env.SENDGRID_VERIFIED_SENDER!,
+        subject: subject || "PKCM Email Test",
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px;">
+              <h2 style="color: #333; margin-bottom: 20px;">PKCM Email Test</h2>
+              <div style="background-color: white; padding: 20px; border-radius: 8px; border-left: 4px solid #2563eb;">
+                <p style="color: #555; line-height: 1.6; margin: 0;">
+                  ${message || "This is a test email to verify SendGrid integration is working properly."}
+                </p>
+              </div>
+              <p style="color: #666; font-size: 14px; margin-top: 20px;">
+                Best regards,<br>
+                PKCM Platform Team
+              </p>
+            </div>
+          </div>
+        `,
+        text: `PKCM Email Test\n\n${message || "This is a test email to verify SendGrid integration is working properly."}\n\nBest regards,\nPKCM Platform Team`
+      });
+
+      if (success) {
+        res.json({ message: "Test email sent successfully" });
+      } else {
+        res.status(500).json({ message: "Failed to send test email" });
+      }
+    } catch (error) {
+      console.error("Error sending test email:", error);
+      res.status(500).json({ message: "Failed to send test email" });
+    }
+  });
+
+  // Test SMS connection
+  app.post("/api/admin/test-sms", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      if (!user || user.role !== "admin") {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const { to, message } = req.body;
+      
+      await sendSMS(
+        to || "+1234567890",
+        message || "PKCM SMS Test: This is a test message to verify Twilio integration is working properly."
+      );
+
+      res.json({ message: "Test SMS sent successfully" });
+    } catch (error) {
+      console.error("Error sending test SMS:", error);
+      res.status(500).json({ message: "Failed to send test SMS" });
+    }
+  });
+
   // Audit Logs
   app.get("/api/admin/audit-logs", isAuthenticated, isAdmin, async (req, res) => {
     try {

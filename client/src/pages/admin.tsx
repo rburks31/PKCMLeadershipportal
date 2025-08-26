@@ -41,6 +41,7 @@ import { AdminActivityFeed } from "@/components/AdminActivityFeed";
 import { ScheduleLiveClassDialog } from "@/components/ScheduleLiveClassDialog";
 import { AnnouncementDialog } from "@/components/AnnouncementDialog";
 import { ReportsDialog } from "@/components/ReportsDialog";
+import { SettingsDialog } from "@/components/SettingsDialog";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -112,6 +113,7 @@ export default function AdminPanel() {
   const [showScheduleClassDialog, setShowScheduleClassDialog] = useState(false);
   const [showAnnouncementDialog, setShowAnnouncementDialog] = useState(false);
   const [showReportsDialog, setShowReportsDialog] = useState(false);
+  const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [isFirstTimeUser, setIsFirstTimeUser] = useState(true); // Temporarily true for testing
 
   // Redirect if not admin
@@ -194,7 +196,7 @@ export default function AdminPanel() {
   };
 
   const handleManageSettings = () => {
-    toast({ title: "Platform Settings", description: "Settings panel will be available here" });
+    setShowSettingsDialog(true);
   };
 
   // User creation form
@@ -883,6 +885,12 @@ export default function AdminPanel() {
         <ReportsDialog
           open={showReportsDialog}
           onOpenChange={setShowReportsDialog}
+        />
+
+        {/* Settings Dialog */}
+        <SettingsDialog
+          open={showSettingsDialog}
+          onOpenChange={setShowSettingsDialog}
         />
       </div>
     </Layout>
