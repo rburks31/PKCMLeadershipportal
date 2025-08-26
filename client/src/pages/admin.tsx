@@ -42,6 +42,7 @@ import { ScheduleLiveClassDialog } from "@/components/ScheduleLiveClassDialog";
 import { AnnouncementDialog } from "@/components/AnnouncementDialog";
 import { ReportsDialog } from "@/components/ReportsDialog";
 import { SettingsDialog } from "@/components/SettingsDialog";
+import { VideoIntegrationDialog } from "@/components/VideoIntegrationDialog";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -114,6 +115,7 @@ export default function AdminPanel() {
   const [showAnnouncementDialog, setShowAnnouncementDialog] = useState(false);
   const [showReportsDialog, setShowReportsDialog] = useState(false);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
+  const [showVideoIntegrationDialog, setShowVideoIntegrationDialog] = useState(false);
   const [isFirstTimeUser, setIsFirstTimeUser] = useState(true); // Temporarily true for testing
 
   // Redirect if not admin

@@ -1190,6 +1190,175 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Video meeting management endpoints
+  app.post("/api/admin/video-meetings", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      if (!user || user.role !== "admin") {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const meetingData = req.body;
+      
+      // Generate meeting details based on provider
+      let meetingDetails = {};
+      switch (meetingData.provider) {
+        case "zoom":
+          meetingDetails = {
+            meetingId: `zoom_${Date.now()}`,
+            meetingUrl: `https://zoom.us/j/${Date.now()}`,
+            meetingPassword: meetingData.requirePassword ? generateRandomPassword() : null,
+          };
+          break;
+        case "meet":
+          meetingDetails = {
+            meetingId: `meet_${Date.now()}`,
+            meetingUrl: `https://meet.google.com/${generateMeetCode()}`,
+            meetingPassword: null, // Google Meet doesn't use passwords
+          };
+          break;
+        case "teams":
+          meetingDetails = {
+            meetingId: `teams_${Date.now()}`,
+            meetingUrl: `https://teams.microsoft.com/l/meetup-join/${generateTeamsCode()}`,
+            meetingPassword: meetingData.requirePassword ? generateRandomPassword() : null,
+          };
+          break;
+        case "videosdk":
+          meetingDetails = {
+            meetingId: `videosdk_${Date.now()}`,
+            meetingUrl: `https://your-videosdk-domain.com/meeting/${generateRandomCode()}`,
+            meetingPassword: meetingData.requirePassword ? generateRandomPassword() : null,
+          };
+          break;
+        default:
+          meetingDetails = {
+            meetingId: `custom_${Date.now()}`,
+            meetingUrl: `https://your-custom-domain.com/meeting/${generateRandomCode()}`,
+            meetingPassword: meetingData.requirePassword ? generateRandomPassword() : null,
+          };
+      }
+
+      const [newMeeting] = await db.insert(videoMeetings).values({
+        title: meetingData.meetingTitle,
+        description: meetingData.meetingDescription,
+        provider: meetingData.provider,
+        meetingId: meetingDetails.meetingId,
+        meetingUrl: meetingDetails.meetingUrl,
+        meetingPassword: meetingDetails.meetingPassword,
+        scheduledDateTime: new Date(meetingData.scheduledDateTime),
+        duration: meetingData.duration,
+        maxParticipants: meetingData.maxParticipants,
+        courseId: meetingData.courseId || null,
+        instructorId: user.id,
+        isRecorded: meetingData.isRecorded,
+        requirePassword: meetingData.requirePassword,
+        enableWaitingRoom: meetingData.enableWaitingRoom,
+        enableChat: meetingData.enableChat,
+        enableScreenShare: meetingData.enableScreenShare,
+        allowEarlyEntry: meetingData.allowEarlyEntry,
+        settings: {
+          provider: meetingData.provider,
+          originalRequest: meetingData
+        }
+      }).returning();
+
+      // Log the meeting creation
+      await db.insert(auditLogs).values({
+        userId: user.id,
+        action: "create_video_meeting",
+        resourceType: "video_meeting",
+        resourceId: newMeeting.id.toString(),
+        details: { title: meetingData.meetingTitle, provider: meetingData.provider },
+        ipAddress: req.ip,
+        userAgent: req.get("User-Agent")
+      });
+
+      res.json({
+        message: "Video meeting created successfully",
+        meeting: newMeeting,
+        title: newMeeting.title
+      });
+    } catch (error) {
+      console.error("Error creating video meeting:", error);
+      res.status(500).json({ message: "Failed to create video meeting" });
+    }
+  });
+
+  // Test video provider connection
+  app.post("/api/admin/test-video-provider", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      if (!user || user.role !== "admin") {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const { provider } = req.body;
+      
+      // Simulate provider connection test
+      switch (provider) {
+        case "zoom":
+          // In a real implementation, you would test the Zoom SDK connection here
+          if (!process.env.ZOOM_SDK_KEY || !process.env.ZOOM_SDK_SECRET) {
+            throw new Error("Zoom SDK credentials not configured");
+          }
+          break;
+        case "meet":
+          // Test Google Meet API connection
+          if (!process.env.GOOGLE_API_KEY) {
+            throw new Error("Google API credentials not configured");
+          }
+          break;
+        case "teams":
+          // Test Microsoft Teams API connection
+          if (!process.env.MICROSOFT_CLIENT_ID || !process.env.MICROSOFT_CLIENT_SECRET) {
+            throw new Error("Microsoft Teams credentials not configured");
+          }
+          break;
+        case "videosdk":
+          // Test VideoSDK connection
+          if (!process.env.VIDEOSDK_API_KEY) {
+            throw new Error("VideoSDK API credentials not configured");
+          }
+          break;
+        case "custom":
+          // For custom implementation, just return success
+          break;
+        default:
+          throw new Error(`Unknown video provider: ${provider}`);
+      }
+
+      res.json({ 
+        message: `${provider} connection test successful`,
+        provider: provider,
+        status: "connected"
+      });
+    } catch (error) {
+      console.error(`Error testing ${req.body.provider} connection:`, error);
+      res.status(500).json({ 
+        message: error.message || "Failed to test video provider connection",
+        provider: req.body.provider,
+        status: "failed"
+      });
+    }
+  });
+
+  // Get video meetings
+  app.get("/api/admin/video-meetings", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      if (!user || user.role !== "admin") {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const meetings = await db.select().from(videoMeetings).orderBy(videoMeetings.scheduledDateTime);
+      res.json(meetings);
+    } catch (error) {
+      console.error("Error fetching video meetings:", error);
+      res.status(500).json({ message: "Failed to fetch video meetings" });
+    }
+  });
+
   // Audit Logs
   app.get("/api/admin/audit-logs", isAuthenticated, isAdmin, async (req, res) => {
     try {

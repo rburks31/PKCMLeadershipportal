@@ -231,6 +231,45 @@ export const systemSettings = pgTable("system_settings", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Video meetings for live classes
+export const videoMeetings = pgTable("video_meetings", {
+  id: serial("id").primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  provider: varchar("provider", { length: 50 }).notNull(), // zoom, meet, teams, videosdk, custom
+  meetingId: varchar("meeting_id", { length: 255 }), // External meeting ID from provider
+  meetingUrl: text("meeting_url"),
+  meetingPassword: varchar("meeting_password", { length: 100 }),
+  scheduledDateTime: timestamp("scheduled_date_time").notNull(),
+  duration: integer("duration").notNull().default(60), // in minutes
+  maxParticipants: integer("max_participants").default(100),
+  courseId: integer("course_id").references(() => courses.id),
+  instructorId: varchar("instructor_id", { length: 255 }).notNull(),
+  status: varchar("status", { length: 20 }).default("scheduled"), // scheduled, live, ended, cancelled
+  isRecorded: boolean("is_recorded").default(false),
+  recordingUrl: text("recording_url"),
+  requirePassword: boolean("require_password").default(true),
+  enableWaitingRoom: boolean("enable_waiting_room").default(true),
+  enableChat: boolean("enable_chat").default(true),
+  enableScreenShare: boolean("enable_screen_share").default(true),
+  allowEarlyEntry: boolean("allow_early_entry").default(false),
+  settings: jsonb("settings"), // Provider-specific settings
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Video meeting participants
+export const videoMeetingParticipants = pgTable("video_meeting_participants", {
+  id: serial("id").primaryKey(),
+  meetingId: integer("meeting_id").references(() => videoMeetings.id).notNull(),
+  userId: varchar("user_id", { length: 255 }).notNull(),
+  joinedAt: timestamp("joined_at"),
+  leftAt: timestamp("left_at"),
+  durationMinutes: integer("duration_minutes"),
+  role: varchar("role", { length: 20 }).default("attendee"), // host, attendee, presenter
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   courses: many(courses),
