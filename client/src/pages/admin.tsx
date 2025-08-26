@@ -40,6 +40,7 @@ import { AdminQuickActions } from "@/components/AdminQuickActions";
 import { AdminActivityFeed } from "@/components/AdminActivityFeed";
 import { ScheduleLiveClassDialog } from "@/components/ScheduleLiveClassDialog";
 import { AnnouncementDialog } from "@/components/AnnouncementDialog";
+import { ReportsDialog } from "@/components/ReportsDialog";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -110,6 +111,7 @@ export default function AdminPanel() {
   const [showCreateUserDialog, setShowCreateUserDialog] = useState(false);
   const [showScheduleClassDialog, setShowScheduleClassDialog] = useState(false);
   const [showAnnouncementDialog, setShowAnnouncementDialog] = useState(false);
+  const [showReportsDialog, setShowReportsDialog] = useState(false);
   const [isFirstTimeUser, setIsFirstTimeUser] = useState(true); // Temporarily true for testing
 
   // Redirect if not admin
@@ -188,7 +190,7 @@ export default function AdminPanel() {
   };
 
   const handleViewReports = () => {
-    toast({ title: "View Reports", description: "Analytics dashboard will be available here" });
+    setShowReportsDialog(true);
   };
 
   const handleManageSettings = () => {
@@ -875,6 +877,12 @@ export default function AdminPanel() {
         <AnnouncementDialog
           open={showAnnouncementDialog}
           onOpenChange={setShowAnnouncementDialog}
+        />
+
+        {/* Reports Dialog */}
+        <ReportsDialog
+          open={showReportsDialog}
+          onOpenChange={setShowReportsDialog}
         />
       </div>
     </Layout>
