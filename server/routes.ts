@@ -1704,6 +1704,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin route for creating live classes
+  app.post("/api/admin/live-classes", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      if (!user || !user.id) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      if (user.role !== "admin") {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const liveClassData = insertLiveClassSchema.parse(req.body);
+      liveClassData.instructorId = user.id;
+
+      // Generate meeting URL based on platform
+      let meetingUrl = "";
+      let meetingId = "";
+      
+      if (liveClassData.platform === "zoom") {
+        // In a real implementation, you would call Zoom API here
+        meetingId = `zoom-${Date.now()}`;
+        meetingUrl = `https://zoom.us/j/${meetingId}`;
+      } else if (liveClassData.platform === "google_meet") {
+        // In a real implementation, you would call Google Meet API here
+        meetingId = `meet-${Date.now()}`;
+        meetingUrl = `https://meet.google.com/${meetingId}`;
+      }
+
+      liveClassData.meetingId = meetingId;
+      liveClassData.meetingUrl = meetingUrl;
+
+      const [newClass] = await db.insert(liveClasses).values(liveClassData).returning();
+
+      // Auto-enroll all course participants
+      if (liveClassData.courseId) {
+        const enrolledUsers = await db.execute(sql`
+          SELECT user_id FROM ${enrollments} 
+          WHERE course_id = ${liveClassData.courseId}
+        `);
+
+        if (enrolledUsers.rows.length > 0) {
+          const attendeePromises = enrolledUsers.rows.map((enrollment: any) =>
+            db.insert(liveClassAttendees).values({
+              liveClassId: newClass.id,
+              userId: enrollment.user_id,
+              status: "registered"
+            })
+          );
+
+          await Promise.all(attendeePromises);
+        }
+      }
+
+      // Log the action
+      await db.insert(auditLogs).values({
+        userId: user.id,
+        action: "create_live_class",
+        resourceType: "live_class",
+        resourceId: newClass.id.toString(),
+        details: { title: newClass.title, platform: newClass.platform },
+        ipAddress: req.ip,
+        userAgent: req.get("User-Agent")
+      });
+
+      res.status(201).json(newClass);
+    } catch (error) {
+      console.error("Error creating live class:", error);
+      res.status(500).json({ message: "Failed to create live class" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

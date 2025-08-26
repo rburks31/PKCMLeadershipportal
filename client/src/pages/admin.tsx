@@ -38,6 +38,7 @@ import { AdminTooltip } from "@/components/AdminTooltip";
 import { AdminOnboardingTour, OnboardingStarter } from "@/components/AdminOnboardingTour";
 import { AdminQuickActions } from "@/components/AdminQuickActions";
 import { AdminActivityFeed } from "@/components/AdminActivityFeed";
+import { ScheduleLiveClassDialog } from "@/components/ScheduleLiveClassDialog";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -106,6 +107,7 @@ export default function AdminPanel() {
   const [selectedModule, setSelectedModule] = useState<Module | null>(null);
   const [showOnboardingTour, setShowOnboardingTour] = useState(false);
   const [showCreateUserDialog, setShowCreateUserDialog] = useState(false);
+  const [showScheduleClassDialog, setShowScheduleClassDialog] = useState(false);
   const [isFirstTimeUser, setIsFirstTimeUser] = useState(true); // Temporarily true for testing
 
   // Redirect if not admin
@@ -176,7 +178,7 @@ export default function AdminPanel() {
   };
 
   const handleScheduleClass = () => {
-    toast({ title: "Schedule Class", description: "Live class scheduling will be available here" });
+    setShowScheduleClassDialog(true);
   };
 
   const handleSendAnnouncement = () => {
@@ -860,6 +862,12 @@ export default function AdminPanel() {
             </Form>
           </DialogContent>
         </Dialog>
+
+        {/* Schedule Live Class Dialog */}
+        <ScheduleLiveClassDialog
+          open={showScheduleClassDialog}
+          onOpenChange={setShowScheduleClassDialog}
+        />
       </div>
     </Layout>
   );
