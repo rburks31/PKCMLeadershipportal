@@ -15,15 +15,38 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 
+// Phone number formatter function
+function formatPhoneNumber(value: string): string {
+  // Remove all non-digit characters
+  const phoneNumber = value.replace(/\D/g, '');
+  
+  // Format as (XXX) XXX-XXXX for US numbers
+  if (phoneNumber.length <= 3) {
+    return phoneNumber;
+  } else if (phoneNumber.length <= 6) {
+    return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3)}`;
+  } else if (phoneNumber.length <= 10) {
+    return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6)}`;
+  } else {
+    // For international numbers (with country code)
+    return `+${phoneNumber.slice(0, phoneNumber.length - 10)} (${phoneNumber.slice(-10, -7)}) ${phoneNumber.slice(-7, -4)}-${phoneNumber.slice(-4)}`;
+  }
+}
+
+// Strip phone formatting before saving
+function stripPhoneFormatting(value: string): string {
+  return value.replace(/\D/g, '');
+}
+
 const profileSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
   phoneNumber: z.string().optional().refine((phone) => {
     if (!phone) return true;
-    // Basic phone validation - accepts various formats
-    const phoneRegex = /^[\+]?[\d\s\-\(\)\.]{10,}$/;
-    return phoneRegex.test(phone);
-  }, 'Please enter a valid phone number'),
+    // Strip formatting and check if it's at least 10 digits
+    const digits = phone.replace(/\D/g, '');
+    return digits.length >= 10;
+  }, 'Please enter a valid phone number (at least 10 digits)'),
 });
 
 type ProfileFormData = z.infer<typeof profileSchema>;
@@ -65,7 +88,12 @@ export default function Profile() {
   });
 
   const handleSave = (data: ProfileFormData) => {
-    updateProfileMutation.mutate(data);
+    // Strip phone formatting before saving
+    const processedData = {
+      ...data,
+      phoneNumber: data.phoneNumber ? stripPhoneFormatting(data.phoneNumber) : ''
+    };
+    updateProfileMutation.mutate(processedData);
   };
 
   const handleCancel = () => {
@@ -224,10 +252,15 @@ export default function Profile() {
                         <FormLabel>Phone Number</FormLabel>
                         <FormControl>
                           <Input 
-                            {...field} 
+                            {...field}
+                            onChange={(e) => {
+                              const formatted = formatPhoneNumber(e.target.value);
+                              field.onChange(formatted);
+                            }}
                             data-testid="input-phone-number"
-                            placeholder="Enter phone number (e.g., +1 555-123-4567)" 
+                            placeholder="(123) 456-7890"
                             type="tel"
+                            maxLength={20}
                           />
                         </FormControl>
                         <FormMessage />

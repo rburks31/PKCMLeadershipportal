@@ -1,4 +1,27 @@
 import { useState, useEffect } from 'react';
+
+// Phone number formatter function
+function formatPhoneNumber(value: string): string {
+  // Remove all non-digit characters
+  const phoneNumber = value.replace(/\D/g, '');
+  
+  // Format as (XXX) XXX-XXXX for US numbers
+  if (phoneNumber.length <= 3) {
+    return phoneNumber;
+  } else if (phoneNumber.length <= 6) {
+    return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3)}`;
+  } else if (phoneNumber.length <= 10) {
+    return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6)}`;
+  } else {
+    // For international numbers (with country code)
+    return `+${phoneNumber.slice(0, phoneNumber.length - 10)} (${phoneNumber.slice(-10, -7)}) ${phoneNumber.slice(-7, -4)}-${phoneNumber.slice(-4)}`;
+  }
+}
+
+// Strip phone formatting before saving
+function stripPhoneFormatting(value: string): string {
+  return value.replace(/\D/g, '');
+}
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '../lib/queryClient';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -45,9 +68,10 @@ const singleUserSchema = z.object({
   lastName: z.string().min(1, 'Last name is required'),
   phoneNumber: z.string().optional().refine((phone) => {
     if (!phone) return true;
-    const phoneRegex = /^[\+]?[\d\s\-\(\)\.]{10,}$/;
-    return phoneRegex.test(phone);
-  }, 'Please enter a valid phone number'),
+    // Strip formatting and check if it's at least 10 digits
+    const digits = phone.replace(/\D/g, '');
+    return digits.length >= 10;
+  }, 'Please enter a valid phone number (at least 10 digits)'),
   role: z.enum(['student', 'instructor'], { required_error: 'Role is required' }),
   password: z.string().min(6, 'Password must be at least 6 characters'),
 });
@@ -95,7 +119,12 @@ export default function UserManagement() {
 
   const createUserMutation = useMutation({
     mutationFn: async (data: SingleUserFormData) => {
-      const response = await apiRequest('POST', '/api/admin/users', data);
+      // Strip phone formatting before sending
+      const processedData = {
+        ...data,
+        phoneNumber: data.phoneNumber ? stripPhoneFormatting(data.phoneNumber) : ''
+      };
+      const response = await apiRequest('POST', '/api/admin/users', processedData);
       return response.json();
     },
     onSuccess: () => {
@@ -429,7 +458,17 @@ jane.smith@example.com,janesmith,Jane,Smith,+1-555-987-6543,instructor,password1
                             <FormItem>
                               <FormLabel>Phone Number</FormLabel>
                               <FormControl>
-                                <Input {...field} type="tel" placeholder="+1-555-123-4567" data-testid="input-phone-number" />
+                                <Input 
+                                  {...field}
+                                  onChange={(e) => {
+                                    const formatted = formatPhoneNumber(e.target.value);
+                                    field.onChange(formatted);
+                                  }}
+                                  type="tel"
+                                  placeholder="(123) 456-7890"
+                                  maxLength={20}
+                                  data-testid="input-phone-number"
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -659,10 +698,14 @@ jane.smith@example.com,janesmith,Jane,Smith,+1-555-987-6543,instructor,password1
                                     <div className="flex items-center gap-2">
                                       <Phone className="h-4 w-4 text-gray-400" />
                                       <Input
-                                        value={editingUser.phoneNumber || ''}
-                                        onChange={(e) => setEditingUser({...editingUser, phoneNumber: e.target.value})}
-                                        placeholder="Phone number"
+                                        value={formatPhoneNumber(editingUser.phoneNumber || '')}
+                                        onChange={(e) => {
+                                          const formatted = formatPhoneNumber(e.target.value);
+                                          setEditingUser({...editingUser, phoneNumber: stripPhoneFormatting(formatted)});
+                                        }}
+                                        placeholder="(123) 456-7890"
                                         className="text-sm"
+                                        maxLength={20}
                                         data-testid={`input-edit-phone-${user.id}`}
                                       />
                                     </div>
