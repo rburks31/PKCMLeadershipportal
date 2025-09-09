@@ -207,24 +207,48 @@ export function setupAuth(app: Express) {
   });
 
   // Update user profile
-  app.put("/api/user/profile", (req, res) => {
-    if (!req.isAuthenticated()) {
+  app.put("/api/user/profile", async (req, res) => {
+    // In development mode, handle mock admin user
+    if (process.env.NODE_ENV === 'development' && !req.isAuthenticated()) {
+      // Mock the admin user for development
+      req.user = {
+        id: "dev-admin",
+        email: "admin@dev.local",
+        username: "dev-admin",
+        firstName: "Development",
+        lastName: "Admin",
+        phoneNumber: null,
+        role: "admin",
+        isActive: true,
+        password: "",
+        profileImageUrl: null,
+        lastLoginAt: null,
+        resetToken: null,
+        resetTokenExpires: null,
+        preferences: null,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+    }
+    
+    if (!req.isAuthenticated() && process.env.NODE_ENV !== 'development') {
       return res.sendStatus(401);
     }
 
     const { firstName, lastName, phoneNumber } = req.body;
-    const userId = req.user.id;
+    const userId = req.user?.id || "dev-admin";
 
-    storage.updateUserProfile(userId, {
-      firstName: firstName || null,
-      lastName: lastName || null,
-      phoneNumber: phoneNumber || null,
-    }).then((updatedUser) => {
+    try {
+      const updatedUser = await storage.updateUserProfile(userId, {
+        firstName: firstName || null,
+        lastName: lastName || null,
+        phoneNumber: phoneNumber || null,
+      });
       res.json(updatedUser);
-    }).catch((error) => {
+    } catch (error) {
       console.error("Error updating user profile:", error);
       res.status(500).json({ message: "Failed to update profile" });
-    });
+    }
   });
 }
 
