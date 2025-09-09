@@ -304,7 +304,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Phone number and message are required" });
       }
 
-      const smsResult = await sendSMS({ to: phoneNumber, message });
+      // Strip formatting from phone number before sending
+      const cleanPhoneNumber = stripPhoneFormatting(phoneNumber) || phoneNumber;
+      const smsResult = await sendSMS({ to: cleanPhoneNumber, message });
       
       if (smsResult.success) {
         res.json({ message: "Test SMS sent successfully!" });
@@ -369,10 +371,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Helper function to strip phone number formatting
+  function stripPhoneFormatting(phone: string | null | undefined): string | null {
+    if (!phone) return null;
+    // Remove all non-digit characters except + at the beginning
+    const cleaned = phone.replace(/[^\d+]/g, '').replace(/\+(?!^)/g, '');
+    // Ensure it starts with + for international numbers or is just digits for domestic
+    return cleaned.startsWith('+') || cleaned.length === 10 ? cleaned : '+1' + cleaned;
+  }
+
   // Create new user endpoint
   app.post("/api/admin/users", isAuthenticated, isAdmin, async (req, res) => {
     try {
-      const { email, firstName, lastName, role } = req.body;
+      const { email, firstName, lastName, role, phoneNumber } = req.body;
       
       // Validate required fields
       if (!email || !firstName || !lastName || !role) {
@@ -390,7 +401,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         email,
         firstName,
         lastName,
-        phoneNumber: req.body.phoneNumber || null, // Optional phone number for SMS
+        phoneNumber: stripPhoneFormatting(phoneNumber), // Strip formatting and store clean number
         role,
         isActive: true
       });

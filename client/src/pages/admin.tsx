@@ -55,11 +55,33 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
+// Phone number formatter function
+function formatPhoneNumber(value: string): string {
+  // Remove all non-digit characters
+  const phoneNumber = value.replace(/\D/g, '');
+  
+  // Format as (XXX) XXX-XXXX for US numbers
+  if (phoneNumber.length <= 3) {
+    return phoneNumber;
+  } else if (phoneNumber.length <= 6) {
+    return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3)}`;
+  } else if (phoneNumber.length <= 10) {
+    return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6)}`;
+  } else {
+    // For international numbers (with country code)
+    return `+${phoneNumber.slice(0, phoneNumber.length - 10)} (${phoneNumber.slice(-10, -7)}) ${phoneNumber.slice(-7, -4)}-${phoneNumber.slice(-4)}`;
+  }
+}
+
 // User creation form schema
 const createUserSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
+  phoneNumber: z.string().optional().refine(
+    (val) => !val || val.replace(/\D/g, '').length >= 10,
+    "Phone number must have at least 10 digits"
+  ),
   role: z.enum(["student", "instructor", "admin"], {
     required_error: "Please select a role",
   }),
@@ -220,6 +242,7 @@ export default function AdminPanel() {
       email: "",
       firstName: "",
       lastName: "",
+      phoneNumber: "",
       role: "student",
     },
   });
@@ -887,6 +910,33 @@ export default function AdminPanel() {
                 
                 <FormField
                   control={createUserForm.control}
+                  name="phoneNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Phone Number (Optional)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          {...field}
+                          type="tel"
+                          placeholder="(123) 456-7890"
+                          data-testid="input-user-phone"
+                          onChange={(e) => {
+                            const formatted = formatPhoneNumber(e.target.value);
+                            field.onChange(formatted);
+                          }}
+                          maxLength={20}
+                        />
+                      </FormControl>
+                      <FormDescription className="text-xs">
+                        For SMS notifications. Format: (123) 456-7890 or +1 (123) 456-7890
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={createUserForm.control}
                   name="role"
                   render={({ field }) => (
                     <FormItem>
@@ -1535,12 +1585,16 @@ function TestSMSSection() {
             id="test-phone"
             type="tel"
             value={phoneNumber}
-            onChange={(e) => setPhoneNumber(e.target.value)}
-            placeholder="+1234567890"
+            onChange={(e) => {
+              const formatted = formatPhoneNumber(e.target.value);
+              setPhoneNumber(formatted);
+            }}
+            placeholder="(123) 456-7890"
             data-testid="input-test-phone"
+            maxLength={20}
           />
           <p className="text-sm text-gray-500 mt-1">
-            Include country code (e.g., +1 for US)
+            Format: (123) 456-7890 or +1 (123) 456-7890 for international
           </p>
         </div>
         <div>
