@@ -20,11 +20,11 @@ export default function Landing() {
               <span className="text-xl font-bold text-gray-900">PKCM Leadership and Ministry Class</span>
             </div>
             <Button 
-              onClick={() => window.location.href = "/api/login"}
+              onClick={() => window.location.href = "/auth"}
               className="bg-pastoral-blue hover:bg-blue-600"
               data-testid="button-login"
             >
-              Sign In with Replit
+              Sign In
             </Button>
           </div>
         </div>
@@ -48,19 +48,14 @@ export default function Landing() {
             <p className="text-xl md:text-2xl mb-8 opacity-90 max-w-3xl mx-auto">
               Comprehensive training in discipleship and leadership at Promise Kingdom Community Ministries, empowering every follower of Jesus to grow in faith, live out biblical truth, and multiply kingdom impact in their communities.
             </p>
-            <div className="space-y-4">
-              <Button 
-                size="lg" 
-                className="bg-pastoral-green hover:bg-green-600 text-lg px-8 py-4"
-                onClick={() => window.location.href = "/api/login"}
-                data-testid="button-get-started"
-              >
-                Get Started with Replit Account
-              </Button>
-              <p className="text-sm opacity-80 max-w-md mx-auto">
-                Sign in securely using your Replit account. No separate password needed.
-              </p>
-            </div>
+            <Button 
+              size="lg" 
+              className="bg-pastoral-green hover:bg-green-600 text-lg px-8 py-4"
+              onClick={() => window.location.href = "/auth"}
+              data-testid="button-get-started"
+            >
+              Get Started Today
+            </Button>
           </div>
         </div>
       </section>
@@ -149,7 +144,7 @@ export default function Landing() {
               </p>
               <Button 
                 className="bg-pastoral-blue hover:bg-blue-600"
-                onClick={() => window.location.href = "/api/login"}
+                onClick={() => window.location.href = "/auth"}
                 data-testid="button-preview-course"
               >
                 Sign In to Preview Course
@@ -169,19 +164,14 @@ export default function Landing() {
             Join thousands of pastors and ministry leaders who are growing in their calling through 
             our biblical training programs.
           </p>
-          <div className="space-y-4">
-            <Button 
-              size="lg" 
-              className="bg-white text-pastoral-blue hover:bg-gray-100 text-lg px-8 py-4"
-              onClick={() => window.location.href = "/api/login"}
-              data-testid="button-join-now"
-            >
-              Join Now with Replit - It's Free
-            </Button>
-            <p className="text-sm opacity-80">
-              You'll need a free Replit account to access our platform. Sign up at replit.com if you don't have one.
-            </p>
-          </div>
+          <Button 
+            size="lg" 
+            className="bg-white text-pastoral-blue hover:bg-gray-100 text-lg px-8 py-4"
+            onClick={() => window.location.href = "/auth"}
+            data-testid="button-join-now"
+          >
+            Join Now - It's Free
+          </Button>
         </div>
       </section>
 

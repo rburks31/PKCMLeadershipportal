@@ -13,7 +13,7 @@ import Lesson from "@/pages/lesson";
 import AdminPanel from "@/pages/admin";
 import SMSManagement from "@/pages/sms-management";
 import LiveClasses from "@/pages/live-classes";
-import AuthPage from "@/pages/auth-page";
+import AuthPage from "@/pages/auth";
 import Profile from "@/pages/profile";
 import UserManagement from "@/pages/user-management";
 
