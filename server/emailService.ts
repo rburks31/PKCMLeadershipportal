@@ -92,15 +92,28 @@ export async function sendWelcomeEmail(userEmail: string, userName: string, user
                     <li><strong>Role:</strong> ${userRole.charAt(0).toUpperCase() + userRole.slice(1)}</li>
                 </ul>
                 
-                <h3>Getting Started:</h3>
+                <h3>Important: Login Instructions</h3>
+                <div style="background: #fff3cd; border: 2px solid #ffc107; border-radius: 5px; padding: 15px; margin: 15px 0;">
+                    <p style="margin: 0; color: #856404;"><strong>⚠️ This platform uses Replit Authentication</strong></p>
+                    <p style="margin: 10px 0 0 0; color: #856404;">You <strong>MUST have a Replit account</strong> to log in. Email/password login is NOT available.</p>
+                </div>
+                
+                <h3>How to Access Your Account:</h3>
                 <ol>
-                    <li>Click the login button below to access the platform</li>
-                    <li>You'll be able to sign in using your Replit account</li>
-                    <li>Once logged in, you can explore courses and begin your learning journey</li>
+                    <li><strong>Create a Replit account</strong> (if you don't have one):
+                        <ul style="margin-top: 5px;">
+                            <li>Go to <a href="https://replit.com/signup">replit.com/signup</a></li>
+                            <li>Sign up for a free account</li>
+                        </ul>
+                    </li>
+                    <li><strong>Click the login button below</strong> to access our platform</li>
+                    <li><strong>Sign in with your Replit credentials</strong> when prompted</li>
+                    <li><strong>Start learning!</strong> The system will automatically match you to this profile</li>
                 </ol>
                 
                 <div style="text-align: center;">
-                    <a href="${loginUrl}" class="button">Access Your Learning Platform</a>
+                    <a href="${loginUrl}" class="button">Sign In with Replit Account</a>
+                    <p style="font-size: 12px; color: #666; margin-top: 10px;">Remember: You need a Replit account to access the platform</p>
                 </div>
                 
                 <h3>What You Can Expect:</h3>
@@ -138,10 +151,18 @@ Your Account Details:
 - Email: ${userEmail}
 - Role: ${userRole.charAt(0).toUpperCase() + userRole.slice(1)}
 
-Getting Started:
-1. Visit: ${loginUrl}
-2. Sign in using your Replit account
-3. Explore courses and begin your learning journey
+IMPORTANT - Login Instructions:
+⚠️ This platform uses Replit Authentication
+You MUST have a Replit account to log in. Email/password login is NOT available.
+
+How to Access Your Account:
+1. Create a Replit account (if you don't have one):
+   - Go to replit.com/signup
+   - Sign up for a free account
+2. Visit: ${loginUrl}
+3. Sign in with your Replit credentials when prompted
+4. The system will automatically match you to this profile
+5. Start exploring courses and begin your learning journey
 
 What You Can Expect:
 - Comprehensive biblical leadership training

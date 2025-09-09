@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
@@ -812,8 +812,17 @@ export default function AdminPanel() {
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
               <DialogTitle>Create New User</DialogTitle>
-              <DialogDescription>
-                Add a new user to the platform. They will receive an invitation to complete their profile.
+              <DialogDescription className="space-y-2">
+                <span>Add a new user to the platform. They will receive a welcome email with instructions.</span>
+                <span className="text-amber-600 font-medium block mt-2">
+                  ⚠️ Important: Users must have a Replit account to log in. They cannot use email/password.
+                </span>
+                <span className="text-sm block">
+                  To sign in, users will need to:
+                  1. Click "Sign In with Replit" on the landing page
+                  2. Log in with their Replit account credentials
+                  3. The system will automatically match them to this profile
+                </span>
               </DialogDescription>
             </DialogHeader>
             <Form {...createUserForm}>
@@ -832,6 +841,9 @@ export default function AdminPanel() {
                           data-testid="input-user-email"
                         />
                       </FormControl>
+                      <FormDescription className="text-xs">
+                        For welcome email only. Login requires a Replit account.
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -953,7 +965,6 @@ export default function AdminPanel() {
           open={showBulkOperationsDialog} 
           onOpenChange={setShowBulkOperationsDialog} 
           selectedUsers={selectedUsers}
-          users={users || []}
         />
 
         {/* Audit Trail Dialog */}
