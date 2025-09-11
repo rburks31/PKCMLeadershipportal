@@ -961,13 +961,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 user: {
                   firstName: recipient.firstName || recipient.first_name || '',
                   lastName: recipient.lastName || recipient.last_name || '',
-                  email: recipient.email,
-                  fullName: `${recipient.firstName || recipient.first_name || ''} ${recipient.lastName || recipient.last_name || ''}`.trim()
+                  email: recipient.email || ''
                 },
                 course: selectedCourse ? {
-                  name: selectedCourse.title,
+                  id: selectedCourse.id,
+                  title: selectedCourse.title,
                   description: selectedCourse.description || '',
-                  instructor: selectedCourse.instructor || ''
+                  instructorId: selectedCourse.instructorId
                 } : undefined,
                 system: {
                   platformName: 'PKCM Leadership and Ministry Class',
@@ -1017,13 +1017,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 user: {
                   firstName: recipient.firstName || recipient.first_name || '',
                   lastName: recipient.lastName || recipient.last_name || '',
-                  email: recipient.email,
-                  fullName: `${recipient.firstName || recipient.first_name || ''} ${recipient.lastName || recipient.last_name || ''}`.trim()
+                  email: recipient.email || ''
                 },
                 course: selectedCourse ? {
-                  name: selectedCourse.title,
+                  id: selectedCourse.id,
+                  title: selectedCourse.title,
                   description: selectedCourse.description || '',
-                  instructor: selectedCourse.instructor || ''
+                  instructorId: selectedCourse.instructorId
                 } : undefined,
                 system: {
                   platformName: 'PKCM Leadership and Ministry Class',

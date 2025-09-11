@@ -44,10 +44,17 @@ export function getAllMergeFields() {
 
 // Context data interface
 export interface MergeFieldContext {
-  user?: User | null;
-  course?: Course | null;
-  lesson?: Lesson | null;
-  instructor?: User | null;
+  user?: Partial<User> | null;
+  course?: Partial<Course> | null;
+  lesson?: Partial<Lesson> | null;
+  instructor?: Partial<User> | null;
+  system?: {
+    platformName?: string;
+    supportEmail?: string;
+    currentDate?: string;
+    currentTime?: string;
+    loginUrl?: string;
+  };
   customData?: Record<string, any>;
 }
 
@@ -86,16 +93,25 @@ export function replaceMergeFields(text: string, context: MergeFieldContext): st
     result = result.replace(/{lessonDuration}/g, context.lesson.duration ? `${Math.round(context.lesson.duration / 60)} minutes` : '');
   }
   
-  // System fields
+  // System fields - use provided context or defaults
   const now = new Date();
   const domains = process.env.REPLIT_DOMAINS;
   const baseUrl = domains ? `https://${domains.split(',')[0]}` : 'http://localhost:5000';
   
-  result = result.replace(/{platformName}/g, 'PKCM Leadership and Ministry Class');
-  result = result.replace(/{currentDate}/g, now.toLocaleDateString());
-  result = result.replace(/{currentTime}/g, now.toLocaleTimeString());
-  result = result.replace(/{supportEmail}/g, process.env.SENDGRID_VERIFIED_SENDER || 'support@pkcm.org');
-  result = result.replace(/{loginUrl}/g, `${baseUrl}/auth`);
+  if (context.system) {
+    result = result.replace(/{platformName}/g, context.system.platformName || 'PKCM Leadership and Ministry Class');
+    result = result.replace(/{currentDate}/g, context.system.currentDate || now.toLocaleDateString());
+    result = result.replace(/{currentTime}/g, context.system.currentTime || now.toLocaleTimeString());
+    result = result.replace(/{supportEmail}/g, context.system.supportEmail || process.env.SENDGRID_VERIFIED_SENDER || 'support@pkcm.org');
+    result = result.replace(/{loginUrl}/g, context.system.loginUrl || `${baseUrl}/auth`);
+  } else {
+    // Fallback to defaults if no system context provided
+    result = result.replace(/{platformName}/g, 'PKCM Leadership and Ministry Class');
+    result = result.replace(/{currentDate}/g, now.toLocaleDateString());
+    result = result.replace(/{currentTime}/g, now.toLocaleTimeString());
+    result = result.replace(/{supportEmail}/g, process.env.SENDGRID_VERIFIED_SENDER || 'support@pkcm.org');
+    result = result.replace(/{loginUrl}/g, `${baseUrl}/auth`);
+  }
   
   // Custom data fields
   if (context.customData) {
