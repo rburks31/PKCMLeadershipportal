@@ -1,4 +1,5 @@
 import Twilio from 'twilio';
+import { replaceMergeFields, MergeFieldContext, SMS_TEMPLATES as MERGE_FIELD_SMS_TEMPLATES } from './mergeFields';
 
 // Initialize Twilio client
 let twilioClient: Twilio.Twilio | null = null;
@@ -22,6 +23,14 @@ interface SMSOptions {
   to: string;
   message: string;
   mediaUrl?: string[]; // For MMS
+  mergeFieldContext?: MergeFieldContext;
+}
+
+interface TemplatedSMSOptions {
+  to: string;
+  templateKey: keyof typeof MERGE_FIELD_SMS_TEMPLATES;
+  mergeFieldContext: MergeFieldContext;
+  mediaUrl?: string[];
 }
 
 interface SMSResponse {
@@ -62,11 +71,16 @@ function formatPhoneNumber(phoneNumber: string): string {
 
 export async function sendSMS(options: SMSOptions): Promise<SMSResponse> {
   try {
-    const { to, message, mediaUrl } = options;
+    let { to, message, mediaUrl, mergeFieldContext } = options;
     const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;
     
     if (!twilioPhoneNumber) {
       throw new Error('TWILIO_PHONE_NUMBER must be set');
+    }
+    
+    // Apply merge fields if context is provided
+    if (mergeFieldContext) {
+      message = replaceMergeFields(message, mergeFieldContext);
     }
     
     // Format and validate phone number
@@ -126,15 +140,38 @@ export async function sendMMS(to: string, message: string, mediaUrls: string[]):
   });
 }
 
+// Send SMS using predefined templates with merge fields
+export async function sendTemplatedSMS(options: TemplatedSMSOptions): Promise<SMSResponse> {
+  const template = MERGE_FIELD_SMS_TEMPLATES[options.templateKey];
+  if (!template) {
+    console.error(`SMS template ${options.templateKey} not found`);
+    return {
+      success: false,
+      error: 'Template not found'
+    };
+  }
+  
+  return await sendSMS({
+    to: options.to,
+    message: template,
+    mediaUrl: options.mediaUrl,
+    mergeFieldContext: options.mergeFieldContext
+  });
+}
+
 // Send bulk SMS to multiple recipients
-export async function sendBulkSMS(recipients: string[], message: string): Promise<SMSResponse[]> {
+export async function sendBulkSMS(recipients: string[], message: string, mergeFieldContext?: MergeFieldContext): Promise<SMSResponse[]> {
   console.log(`Sending bulk SMS to ${recipients.length} recipients`);
   
   const results: SMSResponse[] = [];
   
   for (const recipient of recipients) {
     try {
-      const result = await sendSMS({ to: recipient, message });
+      const result = await sendSMS({ 
+        to: recipient, 
+        message,
+        mergeFieldContext 
+      });
       results.push(result);
       
       // Small delay to avoid rate limiting

@@ -1,4 +1,5 @@
 import { MailService } from '@sendgrid/mail';
+import { replaceMergeFields, MergeFieldContext, MESSAGE_TEMPLATES } from './mergeFields';
 
 if (!process.env.SENDGRID_API_KEY) {
   throw new Error("SENDGRID_API_KEY environment variable must be set");
@@ -13,20 +14,39 @@ interface EmailParams {
   subject: string;
   text?: string;
   html?: string;
+  mergeFieldContext?: MergeFieldContext;
+}
+
+interface TemplatedEmailParams {
+  to: string;
+  from: string;
+  templateKey: keyof typeof MESSAGE_TEMPLATES;
+  mergeFieldContext: MergeFieldContext;
 }
 
 export async function sendEmail(params: EmailParams): Promise<boolean> {
   try {
+    let subject = params.subject;
+    let text = params.text;
+    let html = params.html;
+    
+    // Apply merge fields if context is provided
+    if (params.mergeFieldContext) {
+      subject = replaceMergeFields(subject, params.mergeFieldContext);
+      if (text) text = replaceMergeFields(text, params.mergeFieldContext);
+      if (html) html = replaceMergeFields(html, params.mergeFieldContext);
+    }
+    
     const emailData: any = {
       to: params.to,
       from: params.from,
-      subject: params.subject,
+      subject,
     };
     
-    if (params.text) emailData.text = params.text;
-    if (params.html) emailData.html = params.html;
+    if (text) emailData.text = text;
+    if (html) emailData.html = html;
     
-    console.log(`Sending email via SendGrid from ${params.from} to ${params.to} with subject: ${params.subject}`);
+    console.log(`Sending email via SendGrid from ${params.from} to ${params.to} with subject: ${subject}`);
     
     await mailService.send(emailData);
     console.log(`✅ Email sent successfully to ${params.to}`);
@@ -46,6 +66,24 @@ export async function sendEmail(params: EmailParams): Promise<boolean> {
     }
     return false;
   }
+}
+
+// Send email using predefined templates with merge fields
+export async function sendTemplatedEmail(params: TemplatedEmailParams): Promise<boolean> {
+  const template = MESSAGE_TEMPLATES[params.templateKey];
+  if (!template) {
+    console.error(`Template ${params.templateKey} not found`);
+    return false;
+  }
+  
+  return await sendEmail({
+    to: params.to,
+    from: params.from,
+    subject: template.subject,
+    text: template.text,
+    html: 'html' in template ? template.html : undefined,
+    mergeFieldContext: params.mergeFieldContext
+  });
 }
 
 export async function sendWelcomeEmail(userEmail: string, userName: string, userRole: string): Promise<boolean> {

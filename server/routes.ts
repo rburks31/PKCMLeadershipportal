@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./auth";
 import { sendWelcomeEmail, sendPasswordResetEmail, sendEmail } from "./emailService";
+import { MergeFieldContext } from "./mergeFields";
 import { 
   sendSMS, 
   sendMMS, 
@@ -943,19 +944,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let emailsSent = 0;
       let smsSent = 0;
 
+      // Get course information if course-specific announcement
+      let selectedCourse = null;
+      if (recipientType === "course" && courseId) {
+        const courseResult = await db.select().from(courses).where(eq(courses.id, parseInt(courseId))).limit(1);
+        selectedCourse = courseResult[0] || null;
+      }
+
       // Send emails if requested
       if (sendEmail) {
         for (const recipient of recipients) {
           if (recipient.email) {
             try {
+              // Create merge field context for each recipient
+              const mergeFieldContext: MergeFieldContext = {
+                user: {
+                  firstName: recipient.firstName || recipient.first_name || '',
+                  lastName: recipient.lastName || recipient.last_name || '',
+                  email: recipient.email,
+                  fullName: `${recipient.firstName || recipient.first_name || ''} ${recipient.lastName || recipient.last_name || ''}`.trim()
+                },
+                course: selectedCourse ? {
+                  name: selectedCourse.title,
+                  description: selectedCourse.description || '',
+                  instructor: selectedCourse.instructor || ''
+                } : undefined,
+                system: {
+                  platformName: 'PKCM Leadership and Ministry Class',
+                  supportEmail: process.env.SENDGRID_VERIFIED_SENDER!,
+                  currentDate: new Date().toLocaleDateString()
+                }
+              };
+
               await sendEmail({
                 to: recipient.email,
                 from: process.env.SENDGRID_VERIFIED_SENDER!,
-                subject: `PKCM Announcement: ${title}`,
+                subject: `{platformName} Announcement: ${title}`,
                 html: `
                   <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                     <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px;">
-                      <h2 style="color: #333; margin-bottom: 20px;">PKCM Leadership and Ministry Class</h2>
+                      <h2 style="color: #333; margin-bottom: 20px;">{platformName}</h2>
                       <h3 style="color: #2563eb; margin-bottom: 15px;">${title}</h3>
                       <div style="background-color: white; padding: 20px; border-radius: 8px; border-left: 4px solid #2563eb;">
                         <p style="color: #555; line-height: 1.6; margin: 0;">${message.replace(/\n/g, '<br>')}</p>
@@ -967,7 +995,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     </div>
                   </div>
                 `,
-                text: `PKCM Announcement: ${title}\n\n${message}\n\nBest regards,\nPKCM Leadership Team`
+                text: `{platformName} Announcement: ${title}\n\n${message}\n\nBest regards,\nPKCM Leadership Team`,
+                mergeFieldContext
               });
               emailsSent++;
             } catch (error) {
@@ -983,10 +1012,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (recipient.phoneNumber || recipient.phone_number) {
             const phone = recipient.phoneNumber || recipient.phone_number;
             try {
-              await sendSMS(
-                phone,
-                `PKCM Announcement: ${title}\n\n${message}\n\n- PKCM Leadership Team`
-              );
+              // Create merge field context for each recipient
+              const mergeFieldContext: MergeFieldContext = {
+                user: {
+                  firstName: recipient.firstName || recipient.first_name || '',
+                  lastName: recipient.lastName || recipient.last_name || '',
+                  email: recipient.email,
+                  fullName: `${recipient.firstName || recipient.first_name || ''} ${recipient.lastName || recipient.last_name || ''}`.trim()
+                },
+                course: selectedCourse ? {
+                  name: selectedCourse.title,
+                  description: selectedCourse.description || '',
+                  instructor: selectedCourse.instructor || ''
+                } : undefined,
+                system: {
+                  platformName: 'PKCM Leadership and Ministry Class',
+                  supportEmail: process.env.SENDGRID_VERIFIED_SENDER!,
+                  currentDate: new Date().toLocaleDateString()
+                }
+              };
+
+              await sendSMS({
+                to: phone,
+                message: `{platformName} Announcement: ${title}\n\n${message}\n\n- PKCM Leadership Team`,
+                mergeFieldContext
+              });
               smsSent++;
             } catch (error) {
               console.error(`Failed to send SMS to ${phone}:`, error);

@@ -28,6 +28,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Mail, MessageSquare, Users, BookOpen, Loader2 } from "lucide-react";
+import { MessageComposer } from "@/components/MergeFieldSelector";
 
 const announcementSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -166,23 +167,24 @@ export function AnnouncementDialog({ open, onOpenChange }: AnnouncementDialogPro
               )}
             />
 
-            {/* Message */}
+            {/* Message with Merge Fields */}
             <FormField
               control={form.control}
               name="message"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Message</FormLabel>
                   <FormControl>
-                    <Textarea
-                      placeholder="Enter your announcement message..."
-                      className="min-h-[120px]"
-                      data-testid="input-announcement-message"
-                      {...field}
+                    <MessageComposer
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder="Enter your announcement message...\n\nTip: Use merge fields like {firstName}, {courseName}, and {platformName} to personalize your message."
+                      type="email"
+                      showMergeFields={true}
+                      className="mt-2"
                     />
                   </FormControl>
                   <FormDescription>
-                    Keep your message clear and concise. This will be sent to all selected recipients.
+                    Keep your message clear and concise. Use merge fields to personalize messages for each recipient.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
