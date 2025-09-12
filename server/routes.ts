@@ -26,6 +26,8 @@ import {
   insertSystemSettingSchema,
   insertLiveClassSchema,
   insertLiveClassAttendeeSchema,
+  insertChurchEventSchema,
+  insertEventRegistrationSchema,
   type User,
   type Course,
   type Payment,
@@ -34,7 +36,9 @@ import {
   type AuditLog,
   type CourseReview,
   type LiveClass,
-  type LiveClassAttendee
+  type LiveClassAttendee,
+  type ChurchEvent,
+  type EventRegistration
 } from "@shared/schema";
 import { db } from "./db";
 import { 
@@ -57,7 +61,9 @@ import {
   liveClassAttendees,
   liveClassResources,
   adminActivities,
-  adminOnboarding
+  adminOnboarding,
+  churchEvents,
+  eventRegistrations
 } from "@shared/schema";
 import { eq, desc, sql, count, avg, and, asc } from "drizzle-orm";
 
@@ -2492,6 +2498,226 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error getting performance metrics:", error);
       res.status(500).json({ message: "Failed to get performance metrics" });
+    }
+  });
+
+  // Church Events API endpoints
+  
+  // Get all published church events
+  app.get("/api/events", async (req, res) => {
+    try {
+      const events = await db.select({
+        id: churchEvents.id,
+        title: churchEvents.title,
+        description: churchEvents.description,
+        location: churchEvents.location,
+        imageUrl: churchEvents.imageUrl,
+        startDate: churchEvents.startDate,
+        endDate: churchEvents.endDate,
+        eventType: churchEvents.eventType,
+        maxAttendees: churchEvents.maxAttendees,
+        registrationRequired: churchEvents.registrationRequired,
+        registrationDeadline: churchEvents.registrationDeadline,
+        contactPerson: churchEvents.contactPerson,
+        contactEmail: churchEvents.contactEmail,
+        contactPhone: churchEvents.contactPhone,
+      })
+      .from(churchEvents)
+      .where(eq(churchEvents.isPublished, true))
+      .orderBy(asc(churchEvents.startDate));
+
+      res.json(events);
+    } catch (error) {
+      console.error("Error fetching church events:", error);
+      res.status(500).json({ message: "Failed to fetch church events" });
+    }
+  });
+
+  // Get single church event by ID
+  app.get("/api/events/:id", async (req, res) => {
+    try {
+      const eventId = parseInt(req.params.id);
+      
+      const event = await db.select()
+        .from(churchEvents)
+        .where(and(eq(churchEvents.id, eventId), eq(churchEvents.isPublished, true)))
+        .limit(1);
+
+      if (event.length === 0) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+
+      res.json(event[0]);
+    } catch (error) {
+      console.error("Error fetching church event:", error);
+      res.status(500).json({ message: "Failed to fetch church event" });
+    }
+  });
+
+  // Register for an event (authenticated users only)
+  app.post("/api/events/:id/register", isAuthenticated, async (req: any, res) => {
+    try {
+      const eventId = parseInt(req.params.id);
+      const userId = req.user.id;
+
+      // Check if event exists and registration is open
+      const event = await db.select()
+        .from(churchEvents)
+        .where(and(eq(churchEvents.id, eventId), eq(churchEvents.isPublished, true)))
+        .limit(1);
+
+      if (event.length === 0) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+
+      const eventData = event[0];
+
+      // Check if registration is required and still open
+      if (eventData.registrationRequired && eventData.registrationDeadline) {
+        if (new Date() > new Date(eventData.registrationDeadline)) {
+          return res.status(400).json({ message: "Registration deadline has passed" });
+        }
+      }
+
+      // Check if user is already registered
+      const existingRegistration = await db.select()
+        .from(eventRegistrations)
+        .where(and(
+          eq(eventRegistrations.eventId, eventId),
+          eq(eventRegistrations.userId, userId)
+        ))
+        .limit(1);
+
+      if (existingRegistration.length > 0) {
+        return res.status(400).json({ message: "Already registered for this event" });
+      }
+
+      // Register user for event
+      const [registration] = await db.insert(eventRegistrations).values({
+        eventId,
+        userId,
+        notes: req.body.notes || null
+      }).returning();
+
+      res.status(201).json({
+        message: "Successfully registered for event",
+        registration
+      });
+    } catch (error) {
+      console.error("Error registering for event:", error);
+      res.status(500).json({ message: "Failed to register for event" });
+    }
+  });
+
+  // Admin: Get all church events
+  app.get("/api/admin/events", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const events = await db.select()
+        .from(churchEvents)
+        .orderBy(desc(churchEvents.createdAt));
+
+      res.json(events);
+    } catch (error) {
+      console.error("Error fetching admin church events:", error);
+      res.status(500).json({ message: "Failed to fetch church events" });
+    }
+  });
+
+  // Admin: Create new church event
+  app.post("/api/admin/events", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const validatedData = insertChurchEventSchema.parse(req.body);
+      
+      const [newEvent] = await db.insert(churchEvents).values({
+        ...validatedData,
+        createdBy: req.user.id
+      }).returning();
+
+      res.status(201).json(newEvent);
+    } catch (error) {
+      console.error("Error creating church event:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ message: "Invalid event data", details: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create church event" });
+    }
+  });
+
+  // Admin: Update church event
+  app.put("/api/admin/events/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const eventId = parseInt(req.params.id);
+      const validatedData = insertChurchEventSchema.parse(req.body);
+      
+      const [updatedEvent] = await db.update(churchEvents)
+        .set({
+          ...validatedData,
+          updatedAt: new Date()
+        })
+        .where(eq(churchEvents.id, eventId))
+        .returning();
+
+      if (!updatedEvent) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+
+      res.json(updatedEvent);
+    } catch (error) {
+      console.error("Error updating church event:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ message: "Invalid event data", details: error.errors });
+      }
+      res.status(500).json({ message: "Failed to update church event" });
+    }
+  });
+
+  // Admin: Delete church event
+  app.delete("/api/admin/events/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const eventId = parseInt(req.params.id);
+      
+      const [deletedEvent] = await db.delete(churchEvents)
+        .where(eq(churchEvents.id, eventId))
+        .returning();
+
+      if (!deletedEvent) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+
+      res.json({ message: "Event deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting church event:", error);
+      res.status(500).json({ message: "Failed to delete church event" });
+    }
+  });
+
+  // Admin: Get event registrations
+  app.get("/api/admin/events/:id/registrations", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const eventId = parseInt(req.params.id);
+      
+      const registrations = await db.select({
+        id: eventRegistrations.id,
+        userId: eventRegistrations.userId,
+        registeredAt: eventRegistrations.registeredAt,
+        attendanceStatus: eventRegistrations.attendanceStatus,
+        notes: eventRegistrations.notes,
+        user: {
+          firstName: users.firstName,
+          lastName: users.lastName,
+          email: users.email,
+          phoneNumber: users.phoneNumber
+        }
+      })
+      .from(eventRegistrations)
+      .innerJoin(users, eq(eventRegistrations.userId, users.id))
+      .where(eq(eventRegistrations.eventId, eventId))
+      .orderBy(desc(eventRegistrations.registeredAt));
+
+      res.json(registrations);
+    } catch (error) {
+      console.error("Error fetching event registrations:", error);
+      res.status(500).json({ message: "Failed to fetch event registrations" });
     }
   });
 
