@@ -1,0 +1,99 @@
+import { Switch, Route, useLocation } from "wouter";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "@/components/ui/toaster";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { useAuth } from "@/hooks/useAuth";
+import { UserRole } from "@/types";
+import {
+  Landing,
+  Home,
+  Course,
+  Lesson,
+  AdminPanel,
+  SMSManagement,
+  LiveClasses,
+  AuthPage,
+  Profile,
+  UserManagement,
+  NotFound,
+  AccessDenied,
+  LoadingSpinner
+} from "@/pages";
+
+// Create a higher-order component for role-based access
+const withRoleProtection = (
+  Component: React.ComponentType,
+  allowedRoles: UserRole[] = ["admin"]
+) => {
+  return () => {
+    const { isAuthenticated, isLoading, user } = useAuth();
+    const [_, navigate] = useLocation();
+
+    useEffect(() => {
+      if (!isLoading && !isAuthenticated) {
+        navigate("/auth");
+      } else if (
+        isAuthenticated &&
+        user &&
+        !allowedRoles.includes(user.role as UserRole)
+      ) {
+        navigate("/access-denied");
+      }
+    }, [isAuthenticated, isLoading, user, navigate]);
+
+    if (isLoading) return <LoadingSpinner />;
+    if (!isAuthenticated) return null;
+    if (!allowedRoles.includes(user?.role as UserRole)) return <AccessDenied />;
+
+    return <Component />;
+  };
+};
+
+// Route configuration
+const ROUTES = [
+  { path: "/", component: Landing, public: true },
+  { path: "/auth", component: AuthPage, public: true },
+  { path: "/home", component: Home },
+  { path: "/courses/:courseId", component: Course },
+  { path: "/lessons/:lessonId", component: Lesson },
+  { path: "/live-classes", component: LiveClasses },
+  { path: "/profile", component: Profile },
+  { path: "/admin", component: withRoleProtection(AdminPanel, ["admin"]) },
+  { path: "/admin/sms", component: withRoleProtection(SMSManagement, ["admin"]) },
+  { path: "/admin/users", component: withRoleProtection(UserManagement, ["admin"]) },
+  { path: "/access-denied", component: AccessDenied, public: true },
+  { path: "*", component: NotFound, public: true },
+];
+
+function Router() {
+  const { isAuthenticated, isLoading } = useAuth();
+  const [location] = useLocation();
+
+  // Automatic redirection logic
+  useEffect(() => {
+    if (!isLoading && isAuthenticated && location === "/") {
+      navigate("/home");
+    }
+  }, [isAuthenticated, isLoading, location]);
+
+  return (
+    <Switch>
+      {ROUTES.map(({ path, component: Component, public: isPublic }) => (
+        <Route key={path} path={path}>
+          {isPublic || isAuthenticated ? <Component /> : <AuthPage />}
+        </Route>
+      ))}
+    </Switch>
+  );
+}
+
+export default function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider delayDuration={300}>
+        <Toaster position="top-right" />
+        <Router />
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+}

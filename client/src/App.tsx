@@ -1,119 +1,122 @@
 import { Switch, Route, useLocation } from "wouter";
-import { queryClient } from "./lib/queryClient";
+import { useEffect } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "./lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
-import { useEffect } from "react";
-import NotFound from "@/pages/not-found";
-import Landing from "@/pages/landing";
-import Home from "@/pages/home";
-import Course from "@/pages/course";
-import Lesson from "@/pages/lesson";
-import AdminPanel from "@/pages/admin";
-import SMSManagement from "@/pages/sms-management";
-import LiveClasses from "@/pages/live-classes";
-import AuthPage from "@/pages/auth";
-import Profile from "@/pages/profile";
-import UserManagement from "@/pages/user-management";
+import { UserRole } from "@/types";
+import {
+  Landing,
+  Home,
+  Course,
+  Lesson,
+  AdminPanel,
+  SMSManagement,
+  LiveClasses,
+  AuthPage,
+  Profile,
+  UserManagement,
+  NotFound,
+  AccessDenied,
+  LoadingSpinner
+} from "@/pages";
 
-function ProtectedAdminRoute() {
-  const { isAuthenticated, isLoading, user } = useAuth();
-  const [location, navigate] = useLocation();
+// Create a higher-order component for role-based access
+const withRoleProtection = (
+  Component: React.ComponentType,
+  allowedRoles: UserRole[] = ["admin"]
+) => {
+  return () => {
+    const { isAuthenticated, isLoading, user } = useAuth();
+    const [_, navigate] = useLocation();
 
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      // Store the intended destination in localStorage
-      localStorage.setItem('redirectAfterLogin', '/admin');
-      navigate('/auth');
-    } else if (isAuthenticated && user && (user as any)?.role === 'admin') {
-      // Clear redirect if we're already on admin and authenticated
-      localStorage.removeItem('redirectAfterLogin');
-    }
-  }, [isAuthenticated, isLoading, user, navigate]);
+    useEffect(() => {
+      if (!isLoading && !isAuthenticated) {
+        navigate("/auth");
+      } else if (
+        isAuthenticated &&
+        user &&
+        !allowedRoles.includes(user.role as UserRole)
+      ) {
+        navigate("/access-denied");
+      }
+    }, [isAuthenticated, isLoading, user, navigate]);
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
-      </div>
-    );
-  }
+    if (isLoading) return <LoadingSpinner />;
+    if (!isAuthenticated) return null;
+    if (!allowedRoles.includes(user?.role as UserRole)) return <AccessDenied />;
 
-  if (!isAuthenticated) {
-    return null; // Will redirect to auth via useEffect
-  }
+    return <Component />;
+  };
+};
 
-  if ((user as any)?.role !== 'admin') {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
-          <p className="text-gray-600">You need admin privileges to access this page.</p>
-        </div>
-      </div>
-    );
-  }
-
-  return <AdminPanel />;
-}
+// Route configuration
+const ROUTES = [
+  { path: "/", component: Landing, public: true },
+  { path: "/auth", component: AuthPage, public: true },
+  { path: "/home", component: Home },
+  { path: "/courses/:courseId", component: Course },
+  { path: "/lessons/:lessonId", component: Lesson },
+  { path: "/live-classes", component: LiveClasses },
+  { path: "/profile", component: Profile },
+  { path: "/admin", component: withRoleProtection(AdminPanel, ["admin"]) },
+  { path: "/admin/sms", component: withRoleProtection(SMSManagement, ["admin"]) },
+  { path: "/admin/users", component: withRoleProtection(UserManagement, ["admin"]) },
+  { path: "/access-denied", component: AccessDenied, public: true },
+];
 
 function Router() {
   const { isAuthenticated, isLoading, user } = useAuth();
   const [location, navigate] = useLocation();
 
-  // Handle redirect after login
+  // Automatic redirection logic
   useEffect(() => {
-    if (isAuthenticated && user && !isLoading) {
+    if (!isLoading && isAuthenticated) {
+      // Handle redirect after login
       const redirectPath = localStorage.getItem('redirectAfterLogin');
       if (redirectPath) {
         localStorage.removeItem('redirectAfterLogin');
         navigate(redirectPath);
-      } else if ((user as any)?.role === 'admin' && (location === '/' || location === '/auth')) {
-        // Auto-redirect admins to admin panel from home or auth page
-        navigate('/admin');
+        return;
+      }
+      
+      // Auto-redirect based on location and role
+      if (location === "/" || location === "/auth") {
+        if (user?.role === "admin") {
+          navigate("/admin");
+        } else {
+          navigate("/home");
+        }
       }
     }
-  }, [isAuthenticated, user, isLoading, navigate, location]);
+  }, [isAuthenticated, isLoading, user, location, navigate]);
 
   return (
     <Switch>
-      {isLoading ? (
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
-        </div>
-      ) : !isAuthenticated ? (
-        <>
-          <Route path="/" component={Landing} />
-          <Route path="/auth" component={AuthPage} />
-          <Route path="/admin" component={AuthPage} />
-        </>
-      ) : (
-        <>
-          <Route path="/" component={Home} />
-          <Route path="/courses/:courseId" component={Course} />
-          <Route path="/lessons/:lessonId" component={Lesson} />
-          <Route path="/live-classes" component={LiveClasses} />
-          <Route path="/profile" component={Profile} />
-          <Route path="/admin" component={ProtectedAdminRoute} />
-          <Route path="/admin/sms" component={SMSManagement} />
-          <Route path="/admin/users" component={UserManagement} />
-        </>
-      )}
-      <Route component={NotFound} />
+      {ROUTES.map(({ path, component: Component, public: isPublic }) => (
+        <Route key={path} path={path}>
+          {() => {
+            if (isLoading) return <LoadingSpinner />;
+            if (isPublic || isAuthenticated) return <Component />;
+            return <AuthPage />;
+          }}
+        </Route>
+      ))}
+      <Route>
+        {() => <NotFound />}
+      </Route>
     </Switch>
   );
 }
 
-function App() {
+export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
+      <TooltipProvider delayDuration={300}>
         <Toaster />
         <Router />
       </TooltipProvider>
     </QueryClientProvider>
   );
 }
-
-export default App;
