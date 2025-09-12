@@ -8,7 +8,8 @@ import {
   boolean,
   jsonb,
   index,
-  serial
+  serial,
+  primaryKey
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
@@ -450,6 +451,32 @@ export const eventRegistrations = pgTable("event_registrations", {
   notes: text("notes"),
 });
 
+// Church Groups
+export const churchGroups = pgTable("church_groups", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 100 }).notNull(),
+  description: text("description"),
+  leaderId: varchar("leader_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Group Members
+export const groupMembers = pgTable("group_members", {
+  groupId: integer("group_id").references(() => churchGroups.id, { onDelete: "cascade" }).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+}, (table) => ({
+  pk: primaryKey({ columns: [table.groupId, table.userId] }),
+}));
+
+// Event Reminders
+export const eventReminders = pgTable("event_reminders", {
+  id: serial("id").primaryKey(),
+  eventId: integer("event_id").references(() => churchEvents.id, { onDelete: "cascade" }).notNull(),
+  sendAt: timestamp("send_at").notNull(),
+  message: text("message").notNull(),
+  sent: boolean("sent").default(false),
+});
+
 // Relations for live classes
 export const liveClassesRelations = relations(liveClasses, ({ one, many }) => ({
   course: one(courses, {
@@ -506,6 +533,34 @@ export const eventRegistrationsRelations = relations(eventRegistrations, ({ one 
   }),
 }));
 
+// Relations for church groups
+export const churchGroupsRelations = relations(churchGroups, ({ one, many }) => ({
+  leader: one(users, {
+    fields: [churchGroups.leaderId],
+    references: [users.id],
+  }),
+  members: many(groupMembers),
+}));
+
+export const groupMembersRelations = relations(groupMembers, ({ one }) => ({
+  group: one(churchGroups, {
+    fields: [groupMembers.groupId],
+    references: [churchGroups.id],
+  }),
+  user: one(users, {
+    fields: [groupMembers.userId],
+    references: [users.id],
+  }),
+}));
+
+// Relations for event reminders
+export const eventRemindersRelations = relations(eventReminders, ({ one }) => ({
+  event: one(churchEvents, {
+    fields: [eventReminders.eventId],
+    references: [churchEvents.id],
+  }),
+}));
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertCourseSchema = createInsertSchema(courses).omit({ id: true, createdAt: true, updatedAt: true });
@@ -529,6 +584,9 @@ export const insertAdminActivitySchema = createInsertSchema(adminActivities).omi
 export const insertAdminOnboardingSchema = createInsertSchema(adminOnboarding).omit({ id: true, createdAt: true });
 export const insertChurchEventSchema = createInsertSchema(churchEvents).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertEventRegistrationSchema = createInsertSchema(eventRegistrations).omit({ id: true, registeredAt: true });
+export const insertChurchGroupSchema = createInsertSchema(churchGroups).omit({ id: true, createdAt: true });
+export const insertGroupMemberSchema = createInsertSchema(groupMembers);
+export const insertEventReminderSchema = createInsertSchema(eventReminders).omit({ id: true });
 
 // Types
 export type UpsertUser = z.infer<typeof insertUserSchema>;
@@ -557,6 +615,9 @@ export type AdminActivity = typeof adminActivities.$inferSelect;
 export type AdminOnboarding = typeof adminOnboarding.$inferSelect;
 export type ChurchEvent = typeof churchEvents.$inferSelect;
 export type EventRegistration = typeof eventRegistrations.$inferSelect;
+export type ChurchGroup = typeof churchGroups.$inferSelect;
+export type GroupMember = typeof groupMembers.$inferSelect;
+export type EventReminder = typeof eventReminders.$inferSelect;
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertPayment = z.infer<typeof insertPaymentSchema>;
@@ -580,3 +641,6 @@ export type InsertAdminActivity = z.infer<typeof insertAdminActivitySchema>;
 export type InsertAdminOnboarding = z.infer<typeof insertAdminOnboardingSchema>;
 export type InsertChurchEvent = z.infer<typeof insertChurchEventSchema>;
 export type InsertEventRegistration = z.infer<typeof insertEventRegistrationSchema>;
+export type InsertChurchGroup = z.infer<typeof insertChurchGroupSchema>;
+export type InsertGroupMember = z.infer<typeof insertGroupMemberSchema>;
+export type InsertEventReminder = z.infer<typeof insertEventReminderSchema>;
