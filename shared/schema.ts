@@ -416,6 +416,40 @@ export const adminOnboarding = pgTable("admin_onboarding", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Church Events
+export const churchEvents = pgTable("church_events", {
+  id: serial("id").primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  location: varchar("location", { length: 255 }),
+  imageUrl: varchar("image_url", { length: 500 }),
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date"),
+  eventType: varchar("event_type", { length: 100 }).default("general"), // service, fellowship, prayer, conference, etc.
+  isRecurring: boolean("is_recurring").default(false),
+  recurrencePattern: jsonb("recurrence_pattern"), // for recurring events
+  maxAttendees: integer("max_attendees"),
+  registrationRequired: boolean("registration_required").default(false),
+  registrationDeadline: timestamp("registration_deadline"),
+  contactPerson: varchar("contact_person", { length: 255 }),
+  contactEmail: varchar("contact_email", { length: 255 }),
+  contactPhone: varchar("contact_phone", { length: 50 }),
+  isPublished: boolean("is_published").default(true),
+  createdBy: varchar("created_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Event Registrations
+export const eventRegistrations = pgTable("event_registrations", {
+  id: serial("id").primaryKey(),
+  eventId: integer("event_id").references(() => churchEvents.id, { onDelete: "cascade" }).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  registeredAt: timestamp("registered_at").defaultNow(),
+  attendanceStatus: varchar("attendance_status", { length: 50 }).default("registered"), // registered, attended, missed
+  notes: text("notes"),
+});
+
 // Relations for live classes
 export const liveClassesRelations = relations(liveClasses, ({ one, many }) => ({
   course: one(courses, {
@@ -452,6 +486,26 @@ export const liveClassResourcesRelations = relations(liveClassResources, ({ one 
   }),
 }));
 
+// Relations for church events
+export const churchEventsRelations = relations(churchEvents, ({ one, many }) => ({
+  creator: one(users, {
+    fields: [churchEvents.createdBy],
+    references: [users.id],
+  }),
+  registrations: many(eventRegistrations),
+}));
+
+export const eventRegistrationsRelations = relations(eventRegistrations, ({ one }) => ({
+  event: one(churchEvents, {
+    fields: [eventRegistrations.eventId],
+    references: [churchEvents.id],
+  }),
+  user: one(users, {
+    fields: [eventRegistrations.userId],
+    references: [users.id],
+  }),
+}));
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertCourseSchema = createInsertSchema(courses).omit({ id: true, createdAt: true, updatedAt: true });
@@ -473,6 +527,8 @@ export const insertLiveClassAttendeeSchema = createInsertSchema(liveClassAttende
 export const insertLiveClassResourceSchema = createInsertSchema(liveClassResources).omit({ id: true, createdAt: true });
 export const insertAdminActivitySchema = createInsertSchema(adminActivities).omit({ id: true, createdAt: true });
 export const insertAdminOnboardingSchema = createInsertSchema(adminOnboarding).omit({ id: true, createdAt: true });
+export const insertChurchEventSchema = createInsertSchema(churchEvents).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertEventRegistrationSchema = createInsertSchema(eventRegistrations).omit({ id: true, registeredAt: true });
 
 // Types
 export type UpsertUser = z.infer<typeof insertUserSchema>;
@@ -499,6 +555,8 @@ export type LiveClassAttendee = typeof liveClassAttendees.$inferSelect;
 export type LiveClassResource = typeof liveClassResources.$inferSelect;
 export type AdminActivity = typeof adminActivities.$inferSelect;
 export type AdminOnboarding = typeof adminOnboarding.$inferSelect;
+export type ChurchEvent = typeof churchEvents.$inferSelect;
+export type EventRegistration = typeof eventRegistrations.$inferSelect;
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertPayment = z.infer<typeof insertPaymentSchema>;
@@ -520,3 +578,5 @@ export type InsertLiveClassAttendee = z.infer<typeof insertLiveClassAttendeeSche
 export type InsertLiveClassResource = z.infer<typeof insertLiveClassResourceSchema>;
 export type InsertAdminActivity = z.infer<typeof insertAdminActivitySchema>;
 export type InsertAdminOnboarding = z.infer<typeof insertAdminOnboardingSchema>;
+export type InsertChurchEvent = z.infer<typeof insertChurchEventSchema>;
+export type InsertEventRegistration = z.infer<typeof insertEventRegistrationSchema>;
