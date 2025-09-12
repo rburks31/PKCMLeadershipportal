@@ -59,13 +59,52 @@ export const MERGE_FIELD_HANDLERS: Record<
   },
 };
 
+// Helper function to convert legacy context to runtime context
+function convertToRuntimeContext(context: MergeFieldContext | MergeRuntimeContext): MergeRuntimeContext {
+  // If it's already a runtime context, return as is
+  if ('user' in context && context.user && 'firstName' in (context.user as any)) {
+    return context as MergeRuntimeContext;
+  }
+  
+  // Convert legacy context
+  const legacyContext = context as MergeFieldContext;
+  
+  return {
+    user: legacyContext.user ? {
+      firstName: legacyContext.user.firstName || undefined,
+      lastName: legacyContext.user.lastName || undefined,
+      email: legacyContext.user.email || undefined,
+      username: legacyContext.user.username || undefined,
+      phoneNumber: legacyContext.user.phoneNumber || undefined,
+      role: legacyContext.user.role || undefined,
+    } : undefined,
+    course: legacyContext.course ? {
+      name: legacyContext.course.title || undefined,
+      description: legacyContext.course.description || undefined,
+      instructorName: legacyContext.instructor?.firstName && legacyContext.instructor?.lastName 
+        ? `${legacyContext.instructor.firstName} ${legacyContext.instructor.lastName}`.trim()
+        : legacyContext.instructor?.firstName || undefined,
+      difficulty: legacyContext.course.difficulty || undefined,
+      estimatedHours: legacyContext.course.estimatedHours || undefined,
+    } : undefined,
+    lesson: legacyContext.lesson ? {
+      title: legacyContext.lesson.title || undefined,
+      description: legacyContext.lesson.description || undefined,
+      duration: legacyContext.lesson.duration || undefined,
+    } : undefined,
+    system: legacyContext.system || undefined,
+  };
+}
+
 export function replaceMergeFields(
   text: string, 
-  context: MergeRuntimeContext
+  context: MergeFieldContext | MergeRuntimeContext
 ): string {
+  const runtimeContext = convertToRuntimeContext(context);
+  
   return Object.entries(MERGE_FIELD_HANDLERS).reduce(
     (result, [field, handler]) => 
-      result.replace(new RegExp(field.replace(/[{}]/g, '\\$&'), "g"), () => handler(context)),
+      result.replace(new RegExp(field.replace(/[{}]/g, '\\$&'), "g"), () => handler(runtimeContext)),
     text
   );
 }
@@ -199,3 +238,37 @@ export interface MergeFieldContext {
   };
   customData?: Record<string, any>;
 }
+
+// Message templates for backward compatibility
+export const MESSAGE_TEMPLATES = {
+  welcome: {
+    subject: "Welcome to {platformName}!",
+    text: "Hello {firstName},\n\nWelcome to {platformName}! We're excited to have you join our community.\n\nBest regards,\nThe {platformName} Team",
+    html: "<h2>Welcome to {platformName}!</h2><p>Hello {firstName},</p><p>Welcome to {platformName}! We're excited to have you join our community.</p><p>Best regards,<br>The {platformName} Team</p>"
+  },
+  courseEnrollment: {
+    subject: "Enrolled in {courseName}",
+    text: "Hello {firstName},\n\nYou have been enrolled in {courseName}.\n\nCourse Details:\n- Instructor: {instructorName}\n- Difficulty: {courseDifficulty}\n- Estimated Hours: {estimatedHours}\n\n{courseDescription}\n\nGet started at: {loginUrl}\n\nBless you,\nThe {platformName} Team",
+    html: "<h2>Enrolled in {courseName}</h2><p>Hello {firstName},</p><p>You have been enrolled in <strong>{courseName}</strong>.</p><h3>Course Details:</h3><ul><li><strong>Instructor:</strong> {instructorName}</li><li><strong>Difficulty:</strong> {courseDifficulty}</li><li><strong>Estimated Hours:</strong> {estimatedHours}</li></ul><p>{courseDescription}</p><p><a href='{loginUrl}'>Get started here</a></p><p>Bless you,<br>The {platformName} Team</p>"
+  },
+  lessonReminder: {
+    subject: "Lesson Reminder: {lessonTitle}",
+    text: "Hello {firstName},\n\nDon't forget about your upcoming lesson: {lessonTitle}\n\nLesson Duration: {lessonDuration} minutes\n{lessonDescription}\n\nAccess your lesson at: {loginUrl}\n\nBless you,\nThe {platformName} Team",
+    html: "<h2>Lesson Reminder: {lessonTitle}</h2><p>Hello {firstName},</p><p>Don't forget about your upcoming lesson: <strong>{lessonTitle}</strong></p><p><strong>Lesson Duration:</strong> {lessonDuration} minutes</p><p>{lessonDescription}</p><p><a href='{loginUrl}'>Access your lesson here</a></p><p>Bless you,<br>The {platformName} Team</p>"
+  },
+  certificateEarned: {
+    subject: "Congratulations! Certificate Earned for {courseName}",
+    text: "Hello {firstName},\n\nCongratulations! You have successfully completed {courseName} and earned your certificate.\n\nWe're proud of your dedication and commitment to growing in faith and leadership.\n\nView your certificate at: {loginUrl}\n\nBless you,\nThe {platformName} Team",
+    html: "<h2>Congratulations! Certificate Earned</h2><p>Hello {firstName},</p><p>Congratulations! You have successfully completed <strong>{courseName}</strong> and earned your certificate.</p><p>We're proud of your dedication and commitment to growing in faith and leadership.</p><p><a href='{loginUrl}'>View your certificate here</a></p><p>Bless you,<br>The {platformName} Team</p>"
+  }
+} as const;
+
+// SMS templates for backward compatibility
+export const SMS_TEMPLATES = {
+  welcome: "Welcome to {platformName}, {firstName}! We're excited to have you join our community. Get started: {loginUrl}",
+  courseEnrollment: "Hello {firstName}! You've been enrolled in {courseName} with {instructorName}. Access your course: {loginUrl}",
+  lessonReminder: "Hi {firstName}! Don't forget your lesson: {lessonTitle} ({lessonDuration} min). Start learning: {loginUrl}",
+  certificateEarned: "Congratulations {firstName}! You've earned your certificate for {courseName}. View it here: {loginUrl}",
+  liveClassReminder: "Hi {firstName}! Your live class starts soon. Join here: {loginUrl}",
+  announcement: "{firstName}, important update from {platformName}: {message}"
+} as const;

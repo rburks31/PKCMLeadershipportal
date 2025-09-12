@@ -2495,6 +2495,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Import and use messaging routes
+  try {
+    const messagingRoutes = await import('./routes/messaging');
+    app.use('/api/admin', messagingRoutes.default);
+  } catch (error) {
+    console.error('Failed to load messaging routes:', error);
+  }
+
   const httpServer = createServer(app);
   return httpServer;
 }
