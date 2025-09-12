@@ -69,7 +69,7 @@ export function replaceMergeFields(text: string, context: MergeFieldContext): st
     result = result.replace(/{fullName}/g, `${context.user.firstName || 'Student'} ${context.user.lastName || ''}`.trim());
     result = result.replace(/{email}/g, context.user.email || '');
     result = result.replace(/{username}/g, context.user.username || '');
-    result = result.replace(/{phoneNumber}/g, formatPhoneForDisplay(context.user.phoneNumber) || '');
+    result = result.replace(/{phoneNumber}/g, formatPhoneForDisplay(context.user.phoneNumber || null) || '');
     result = result.replace(/{role}/g, context.user.role ? capitalizeRole(context.user.role) : 'Student');
   }
   
