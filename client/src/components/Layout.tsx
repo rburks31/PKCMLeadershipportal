@@ -10,7 +10,8 @@ import {
   LogOut, 
   User,
   Shield,
-  Video
+  Video,
+  Calendar
 } from "lucide-react";
 
 interface LayoutProps {
@@ -31,6 +32,7 @@ export default function Layout({ children }: LayoutProps) {
     { name: "Home", href: "/", icon: Home, current: location === "/" },
     { name: "Courses", href: "/courses", icon: BookOpen, current: location.startsWith("/courses") },
     { name: "Live Classes", href: "/live-classes", icon: Video, current: location === "/live-classes" },
+    { name: "Events", href: "/events", icon: Calendar, current: location === "/events" },
     { name: "Profile", href: "/profile", icon: User, current: location === "/profile" },
     ...(isAdmin ? [{ name: "Admin Portal", href: "/admin", icon: Shield, current: location === "/admin" }] : []),
   ];
