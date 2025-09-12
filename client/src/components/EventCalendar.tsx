@@ -65,13 +65,13 @@ export default function EventCalendar({ events, onEventClick }: EventCalendarPro
     });
   };
 
-  const isToday = (date: Date) => {
+  const isToday = (date: Date | null) => {
     if (!date) return false;
     const today = new Date();
     return date.toDateString() === today.toDateString();
   };
 
-  const isCurrentMonth = (date: Date) => {
+  const isCurrentMonth = (date: Date | null) => {
     if (!date) return false;
     return date.getMonth() === currentDate.getMonth();
   };

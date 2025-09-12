@@ -6,6 +6,7 @@ export { default as Lesson } from "./lesson";
 export { default as AdminPanel } from "./admin";
 export { default as SMSManagement } from "./sms-management";
 export { default as LiveClasses } from "./live-classes";
+export { default as Events } from "./events";
 export { default as AuthPage } from "./auth";
 export { default as Profile } from "./profile";
 export { default as UserManagement } from "./user-management";
