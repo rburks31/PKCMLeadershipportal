@@ -10,5 +10,5 @@ export { default as AuthPage } from "./auth";
 export { default as Profile } from "./profile";
 export { default as UserManagement } from "./user-management";
 export { default as NotFound } from "./not-found";
-export { default as AccessDenied } from "./access-denied";
-export { default as LoadingSpinner } from "./loading-spinner";
+export { default as AccessDenied } from "./access-denied.tsx";
+export { default as LoadingSpinner } from "./loading-spinner.tsx";

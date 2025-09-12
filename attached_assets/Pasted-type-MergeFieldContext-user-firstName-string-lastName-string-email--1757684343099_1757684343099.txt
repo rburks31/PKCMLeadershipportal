@@ -1,0 +1,80 @@
+type MergeFieldContext = {
+  user?: {
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    username?: string;
+    phoneNumber?: string;
+    role?: string;
+  };
+  course?: {
+    name?: string;
+    description?: string;
+    instructorName?: string;
+    difficulty?: string;
+    estimatedHours?: number;
+  };
+  lesson?: {
+    title?: string;
+    description?: string;
+    duration?: number;
+  };
+  system?: {
+    platformName?: string;
+    supportEmail?: string;
+    loginUrl?: string;
+  };
+};
+
+export const MERGE_FIELD_HANDLERS: Record<
+  string, 
+  (context: MergeFieldContext) => string
+> = {
+  "{firstName}": (ctx) => ctx.user?.firstName || "Member",
+  "{lastName}": (ctx) => ctx.user?.lastName || "",
+  "{fullName}": (ctx) => 
+    `${ctx.user?.firstName || "Member"} ${ctx.user?.lastName || ""}`.trim(),
+  "{email}": (ctx) => ctx.user?.email || "",
+  "{username}": (ctx) => ctx.user?.username || "",
+  "{phoneNumber}": (ctx) => ctx.user?.phoneNumber || "",
+  "{role}": (ctx) => ctx.user?.role || "Member",
+  "{courseName}": (ctx) => ctx.course?.name || "the course",
+  "{courseDescription}": (ctx) => ctx.course?.description || "",
+  "{instructorName}": (ctx) => ctx.course?.instructorName || "our instructor",
+  "{courseDifficulty}": (ctx) => ctx.course?.difficulty || "",
+  "{estimatedHours}": (ctx) => ctx.course?.estimatedHours?.toString() || "",
+  "{lessonTitle}": (ctx) => ctx.lesson?.title || "the lesson",
+  "{lessonDescription}": (ctx) => ctx.lesson?.description || "",
+  "{lessonDuration}": (ctx) => ctx.lesson?.duration?.toString() || "",
+  "{platformName}": () => "PKCM Leadership and Ministry Class",
+  "{currentDate}": () => new Date().toLocaleDateString(),
+  "{currentTime}": () => new Date().toLocaleTimeString(),
+  "{supportEmail}": () => "support@pkcm.org",
+  "{loginUrl}": () => `${process.env.BASE_URL}/auth`,
+};
+
+export function replaceMergeFields(
+  text: string, 
+  context: MergeFieldContext
+): string {
+  return Object.entries(MERGE_FIELD_HANDLERS).reduce(
+    (result, [field, handler]) => 
+      result.replace(new RegExp(field, "g"), handler(context)),
+    text
+  );
+}
+
+// Validate merge fields in content
+export function validateMergeFields(content: string): string[] {
+  const invalidFields: string[] = [];
+  const fieldRegex = /{(\w+)}/g;
+  
+  let match;
+  while ((match = fieldRegex.exec(content)) !== null) {
+    if (!MERGE_FIELD_HANDLERS[match[0]]) {
+      invalidFields.push(match[0]);
+    }
+  }
+  
+  return invalidFields;
+}
