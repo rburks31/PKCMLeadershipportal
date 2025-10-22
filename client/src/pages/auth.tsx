@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useLocation } from "wouter";
-import logoImage from "@assets/SEVEN WEAPONS OF THE WEAPON_1755651386501.jpg";
+import { Church } from "lucide-react";
 
 // Phone number formatter function
 function formatPhoneNumber(value: string): string {
@@ -150,10 +150,8 @@ export default function AuthPage() {
     <div className="min-h-screen bg-gradient-to-br from-pastoral-blue/10 to-pastoral-green/10 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <img 
-            src={logoImage} 
-            alt="PKCM Logo" 
-            className="h-16 w-auto mx-auto mb-4"
+          <Church
+            className="h-16 w-16 mx-auto mb-4 text-blue-600"
           />
           <CardTitle className="text-2xl">PKCM Leadership and Ministry Class</CardTitle>
           <CardDescription>Sign in or create your account</CardDescription>

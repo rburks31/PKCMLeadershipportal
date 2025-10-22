@@ -33,10 +33,10 @@ import {
   Search,
   Shield,
   Database,
-  Server
+  Server,
+  Church
 } from "lucide-react";
 import Layout from "@/components/Layout";
-import logoImage from "@assets/SEVEN WEAPONS OF THE WEAPON_1755651386501.jpg";
 import { Link } from "wouter";
 import { AdminTooltip } from "@/components/AdminTooltip";
 import { AdminOnboardingTour, OnboardingStarter } from "@/components/AdminOnboardingTour";
@@ -380,10 +380,8 @@ export default function AdminPanel() {
           />
           
           <div className="flex items-center justify-center mb-6">
-            <img 
-              src={logoImage} 
-              alt="PKCM Logo" 
-              className="h-12 w-auto mr-4 pkcm-logo"
+            <Church
+              className="h-12 w-12 mr-4 text-blue-600"
             />
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2" data-testid="text-admin-title">

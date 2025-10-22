@@ -2,16 +2,16 @@ import { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import logoImage from "@assets/SEVEN WEAPONS OF THE WEAPON_1755651386501.jpg";
-import { 
-  Home, 
-  BookOpen, 
-  Settings, 
-  LogOut, 
+import {
+  Home,
+  BookOpen,
+  Settings,
+  LogOut,
   User,
   Shield,
   Video,
-  Calendar
+  Calendar,
+  Church
 } from "lucide-react";
 
 interface LayoutProps {
@@ -48,11 +48,7 @@ export default function Layout({ children }: LayoutProps) {
               <div className="flex-shrink-0 flex items-center">
                 <Link href="/">
                   <div className="flex items-center space-x-3" data-testid="link-logo">
-                    <img 
-                      src={logoImage} 
-                      alt="PKCM Logo" 
-                      className="h-10 w-auto pkcm-logo"
-                    />
+                    <Church className="h-10 w-10 text-blue-600" />
                     <div className="text-xl font-bold text-pastoral-primary">
                       PKCM Leadership
                     </div>

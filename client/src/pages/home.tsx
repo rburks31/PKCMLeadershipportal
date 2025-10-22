@@ -6,8 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import Layout from "@/components/Layout";
 import { useAuth } from "@/hooks/useAuth";
-import { Play, Clock, BookOpen, Users, Award, Video, Calendar } from "lucide-react";
-import logoImage from "@assets/SEVEN WEAPONS OF THE WEAPON_1755651386501.jpg";
+import { Play, Clock, BookOpen, Users, Award, Video, Calendar, Church } from "lucide-react";
 
 export default function Home() {
   const { user } = useAuth();
@@ -31,10 +30,8 @@ export default function Home() {
         {/* Welcome Section */}
         <div className="mb-8">
           <div className="flex items-center justify-center mb-6">
-            <img 
-              src={logoImage} 
-              alt="PKCM Logo" 
-              className="h-16 w-auto mr-4 pkcm-logo"
+            <Church
+              className="h-16 w-16 mr-4 text-blue-600"
             />
             <div className="text-center">
               <h1 className="text-3xl font-bold text-gray-900 mb-2" data-testid="text-welcome">
